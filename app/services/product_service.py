@@ -9,10 +9,12 @@ class ProductService:
     def __init__(self, db: Session):
         self.db = db
 
-    def add(self, product_add_request: ProductAddRequest):
+    def add(self, product_add_request: ProductAddRequest, user_id: int):
         try:
+            if user_id is None:
+                raise ProductNotAddedException(reason="User not authenticated")
+
             new_product = Product()
-            new_product.id = product_add_request.id
             new_product.title = product_add_request.title
             new_product.description = product_add_request.description
             new_product.price = product_add_request.price

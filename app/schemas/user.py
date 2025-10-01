@@ -4,7 +4,6 @@ from typing import Optional
 from datetime import timedelta
 
 class UserCreateRequest(BaseModel):
-    id: int
     name: str
     email: EmailStr
     password: str

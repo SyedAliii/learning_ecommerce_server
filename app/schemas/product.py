@@ -2,7 +2,6 @@ from typing import List
 from pydantic import BaseModel
 
 class ProductAddRequest(BaseModel):
-    id: int
     title: str
     description: str
     price: int

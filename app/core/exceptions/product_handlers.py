@@ -2,8 +2,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 class ProductNotAddedException(Exception):
-    def __init__(self, product_id: int, reason: str):
-        self.product_id = product_id
+    def __init__(self, reason: str):
         self.reason = reason
 
 class AllProductsNotGetException(Exception):
