@@ -1,0 +1,72 @@
+ecommerce/
+│── alembic/                     # Database migrations (if using Alembic)
+│── app/
+│   ├── api/                     # API layer (routes/endpoints)
+│   │   ├── v1/                  # Versioned APIs (v1, v2, ...)
+│   │   │   ├── routes/          # Endpoint route definitions
+│   │   │   │   ├── auth.py
+│   │   │   │   ├── users.py
+│   │   │   │   ├── products.py
+│   │   │   │   ├── categories.py
+│   │   │   │   ├── cart.py
+│   │   │   │   ├── orders.py
+│   │   │   │   └── search.py
+│   │   │   └── __init__.py
+│   │   └── __init__.py
+│   │
+│   ├── core/                    # Core settings & configs
+│   │   ├── config.py            # Settings (env vars, constants)
+│   │   ├── security.py          # Auth/JWT/security logic
+│   │   ├── logging.py           # Logging configuration
+│   │   └── __init__.py
+│   │
+│   ├── db/                      # Database-related files
+│   │   ├── base.py              # Base class for models
+│   │   ├── session.py           # Database session management
+│   │   └── __init__.py
+│   │
+│   ├── models/                  # SQLAlchemy models (DB tables)
+│   │   ├── user.py
+│   │   ├── product.py
+│   │   ├── category.py
+│   │   ├── cart.py
+│   │   ├── order.py
+│   │   └── __init__.py
+│   │
+│   ├── schemas/                 # Pydantic schemas (validation, serialization)
+│   │   ├── user.py
+│   │   ├── product.py
+│   │   ├── category.py
+│   │   ├── cart.py
+│   │   ├── order.py
+│   │   └── __init__.py
+│   │
+│   ├── services/                # Business logic (separated from routes)
+│   │   ├── auth_service.py
+│   │   ├── product_service.py
+│   │   ├── cart_service.py
+│   │   ├── order_service.py
+│   │   ├── search_service.py
+│   │   └── __init__.py
+│   │
+│   ├── utils/                   # Helper utilities
+│   │   ├── email.py             # Sending order emails
+│   │   ├── slugify.py           # Human-readable URLs
+│   │   ├── cache.py             # Redis or in-memory caching
+│   │   └── __init__.py
+│   │
+│   ├── main.py                  # FastAPI app entrypoint
+│   └── __init__.py
+│
+│── tests/                       # Unit and integration tests
+│   ├── test_auth.py
+│   ├── test_products.py
+│   ├── test_cart.py
+│   ├── test_orders.py
+│   └── conftest.py
+│
+│── .env                         # Environment variables
+│── requirements.txt             # Dependencies
+│── pyproject.toml               # Alternative dependency management
+│── alembic.ini                  # Alembic config
+│── README.md

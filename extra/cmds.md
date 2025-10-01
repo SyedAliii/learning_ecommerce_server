@@ -1,0 +1,12 @@
+1. Pips:
+- pip install sqlalchemy
+- pip install pydantic
+- pip install fastapi[all]
+- pip install uvicorn[standard]
+- pip install python-dotenv
+- pip install psycopg2
+- pip install pydantic-settings
+- pip install python-jose
+- pip install argon2-cffi
+- pip install passlib[argon2]
+
