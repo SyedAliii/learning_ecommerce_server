@@ -1,4 +1,4 @@
-from ....schemas.user import UserAuthenticateRequest, UserAuthenticateResponse
+from ....schemas.user import UserAuthenticateRequest
 from fastapi import APIRouter, Depends
 from ....services.user_service import UserService
 from ....db.session import get_db
@@ -8,7 +8,7 @@ from ....core.security import create_access_token
 
 router = APIRouter()
 
-@router.post("/token")
+@router.post("/login")
 async def login_for_access_token(form_Data: OAuth2PasswordRequestForm = Depends(),
                                  db: Session = Depends(get_db)):
     user_service = UserService(db)

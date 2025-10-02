@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from ..models.users import UserRole
+from ..models.user import UserRole
 from typing import Optional
 from datetime import timedelta
 
@@ -10,11 +10,6 @@ class UserCreateRequest(BaseModel):
     address: str
     city: str
     country: str
-    roles: UserRole
-
-class UserCreateResponse(BaseModel):
-    status_code: int
-    msg: str
 
 class UserAuthenticateRequest(BaseModel):
     email: EmailStr
