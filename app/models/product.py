@@ -15,3 +15,4 @@ class Product(Base):
     subcategory = Column(String, nullable=False)
 
     # images = relationship("ProductImage", back_populates="product")
+    # cart_products = relationship("CartProducts", back_populates="products")

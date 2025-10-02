@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum as AlchemyEnum
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum as AlchemyEnum
 from ..db.session import Base
 from sqlalchemy.orm import relationship
 import enum
@@ -18,3 +18,7 @@ class User(Base):
     country = Column(String, nullable=False)
     roles = Column(AlchemyEnum(UserRole), nullable=False)
     hashed_password = Column(String, nullable=False)
+    active_cart_id = Column(Integer, ForeignKey("carts.id"), nullable=True)
+
+    # active_cart = relationship("Cart", back_populates="user",
+    #                 foreign_keys=[active_cart_id], uselist=False)

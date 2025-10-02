@@ -18,6 +18,7 @@ async def create_user(user_create_request: UserCreateRequest, db: Session = Depe
     user_service = UserService(db)
     return user_service.create_user(user_create_request)
 
+
 @router.post("/delete_user/{user_id_to_delete}", response_model=GenericResponse)
 async def delete_user(user_id_to_delete: int, user_id: int= Depends(get_current_user),
                        db: Session = Depends(get_db)):

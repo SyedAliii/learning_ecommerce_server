@@ -1,3 +1,4 @@
+from app.models.cart import Cart
 from ..schemas.user import UserCreateRequest, UserAuthenticateRequest, UserAuthenticateResponse, UserResponse
 from ..schemas.generic import GenericResponse
 from ..models.user import User, UserRole
@@ -23,6 +24,7 @@ class UserService:
             new_user.hashed_password = get_password_hash(user_create_request.password)
             
             self.db.add(new_user)
+            
             self.db.commit()
             self.db.refresh(new_user)
 
