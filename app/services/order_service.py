@@ -9,6 +9,10 @@ from fastapi import status
 from sqlalchemy.orm import Session
 from ..core.exceptions.exception_main import GenericException
 from typing import List
+from app.core.config import settings
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 class OrderService:
     def __init__(self, db: Session):
@@ -87,8 +91,38 @@ class OrderService:
             cart_id = self.db.query(Order).filter(Order.id == receipt.order_id).first().cart_id
             product_ids_in_cart = self.__get_product_ids_in_cart(cart_id)
             products_breakdown = self.__get_products_price_breakdown(product_ids_in_cart)
-            # Send email logic here
-            return True
+            
+            sender_email = settings.SENDER_EMAIL
+            receiver_email = self.db.query(User).filter(User.id == receipt.user_id).first().email
+            app_password = settings.APP_PASSWORD
+            
+            message = MIMEMultipart()
+            message["From"] = sender_email
+            message["To"] = receiver_email
+            message["Subject"] = "Receipt for Your Order"
+
+            body = "This is an auto generated receipt for your recent order.\n\n"
+            for product in products_breakdown:
+                body += f"Product: {product['title']}\n"
+                body += f"Price: {product['price']}\n"
+                body += f"Quantity: {product['quantity']}\n"
+                body += "-------------------------\n"
+            body += f"Subtotal: {receipt.subtotal}\n"
+            body += f"Tax: {receipt.tax}\n"
+            body += f"Shipping Fee: {receipt.shipping_fee}\n"
+            body += f"Grand Total: {receipt.grand_total}\n"
+            body += "\nThank you for shopping with us!"
+
+            message.attach(MIMEText(body, "plain"))
+
+            try:
+                server = smtplib.SMTP("smtp.gmail.com", 587)
+                server.starttls()
+                server.login(sender_email, app_password)
+                server.sendmail(sender_email, receiver_email, message.as_string())
+                return True
+            finally:
+                server.quit()
         except Exception as e:
             self.db.rollback()
             raise GenericException(reason=str(e))

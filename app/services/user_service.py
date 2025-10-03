@@ -1,7 +1,11 @@
+from typing import List
 from app.models.cart import Cart
-from ..schemas.user import UserCreateRequest, UserAuthenticateRequest, UserAuthenticateResponse, UserResponse
+from app.models.cart_products import CartProducts
+from app.models.product import Product
+from ..schemas.user import UserCreateRequest, UserAuthenticateRequest, UserAuthenticateResponse, UserResponse, UserDataResponse, UserCartProduct
 from ..schemas.generic import GenericResponse
-from ..models.user import User, UserRole
+from ..schemas.product import ProductBaseModel
+from app.models.user import User, UserRole
 from fastapi import Depends, status
 from sqlalchemy.orm import Session
 from ..core.exceptions.exception_main import GenericException
@@ -11,6 +15,35 @@ from ..core.config import settings
 class UserService:
     def __init__(self, db: Session):
         self.db = db
+
+    def __get_product_ids_in_cart(self, cart_id: int):
+        try:
+            cart_products_ids = self.db.query(CartProducts).filter(CartProducts.cart_id == cart_id).all()
+            return cart_products_ids
+        except Exception as e:
+            raise GenericException(reason=str(e))
+        
+    def __get_user_cart_products(self, cart_products_ids: List[CartProducts]):
+        products: List[Product] = []
+        for cart_product in cart_products_ids:
+            product = self.db.query(Product).filter(Product.id == cart_product.product_id).first()
+            if product:
+                products.append(product)
+
+        user_cart_products: List[UserCartProduct] = []
+        for product in products:
+            user_cart_product = UserCartProduct(
+                id=product.id,
+                title=product.title,
+                description=product.description,
+                price=product.price,
+                total_quantity=product.quantity,
+                category=product.category,
+                subcategory=product.subcategory,
+                quantity_in_cart=next((cp.quantity for cp in cart_products_ids if cp.product_id == product.id), 0)
+            )
+            user_cart_products.append(user_cart_product)
+        return user_cart_products
 
     def create_admin(self, user_create_request: UserCreateRequest):
         try:
@@ -95,4 +128,23 @@ class UserService:
                     user=UserResponse(id=user.id, name=user.name, email=user.email, address=user.address, city=user.city, country=user.country, roles=user.roles)
                 )
         except Exception as e:
+            raise GenericException(reason=str(e))
+
+    def get_user_data(self, access_token: str, user_id: int):
+        try:
+            user = self.db.query(User).filter(User.id == user_id).first()
+            product_ids_in_cart = self.__get_product_ids_in_cart(user.active_cart_id) if user.active_cart_id else []
+            return UserDataResponse(
+                access_token=access_token,
+                name=user.name,
+                email=user.email,
+                roles=user.roles,
+                cart_products=self.__get_user_cart_products(product_ids_in_cart),
+                status_code=status.HTTP_200_OK,
+                msg=f"User Successfully Logged In"
+            )
+        except GenericException:
+            raise
+        except Exception as e:
+            self.db.rollback()
             raise GenericException(reason=str(e))

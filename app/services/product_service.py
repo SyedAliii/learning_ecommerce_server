@@ -2,7 +2,7 @@
 from ..schemas.product import (AllProductsGetResponse, ProductAddRequest, ProductBaseModel, SingleProductGetResponse,
     ProductUpdateRequest)
 from ..schemas.generic import GenericResponse
-from ..models.product import Product
+from ..models.product import Product, ProductStatus
 from ..models.user import UserRole, User
 from fastapi import status
 from sqlalchemy.orm import Session
@@ -29,6 +29,7 @@ class ProductService:
             new_product.quantity = product_add_request.quantity
             new_product.category = product_add_request.category
             new_product.subcategory = product_add_request.subcategory
+            new_product.status = ProductStatus.AVAILABLE
 
             self.db.add(new_product)
             self.db.commit()
@@ -46,7 +47,7 @@ class ProductService:
 
     def get_all(self):
         try:
-            products = self.db.query(Product).all()
+            products = self.db.query(Product).filter(Product.status == ProductStatus.AVAILABLE).all()
             return AllProductsGetResponse(products=[ProductBaseModel(**product.__dict__) for product in products])
         except GenericException:
             raise
@@ -55,7 +56,7 @@ class ProductService:
         
     def get_single(self, product_id: int):
         try:
-            product = self.db.query(Product).filter(Product.id == product_id).first()
+            product = self.db.query(Product).filter(Product.id == product_id and Product.status == ProductStatus.AVAILABLE).first()
             if not product:
                 raise GenericException(reason=f"Product not found with id: {product_id}")
             return SingleProductGetResponse(product=ProductBaseModel(**product.__dict__))
@@ -107,7 +108,7 @@ class ProductService:
             if not product:
                 raise GenericException(reason="Product not found")
 
-            self.db.delete(product)
+            product.status = ProductStatus.DELISTED
             self.db.commit()
 
             return GenericResponse(
