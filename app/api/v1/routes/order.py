@@ -1,4 +1,4 @@
-from ....schemas.order import (OrderUpdateRequest)
+from ....schemas.order import (OrderUpdateRequest, OrderUpdateResponse)
 from ....schemas.generic import GenericResponse
 from fastapi import APIRouter, Depends
 from ....services.order_service import OrderService
@@ -14,7 +14,7 @@ async def create_order(user_id: Optional[int] = Depends(get_current_user), db: S
     order_service = OrderService(db)
     return order_service.create(user_id)
 
-@router.post("/update_order", response_model=GenericResponse)
+@router.post("/update_order", response_model=OrderUpdateResponse)
 async def update_order(order_update_request: OrderUpdateRequest, user_id: Optional[int] = Depends(get_current_user), db: Session = Depends(get_db)):
     order_service = OrderService(db)
     return order_service.update(order_update_request, user_id)

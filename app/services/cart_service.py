@@ -25,6 +25,10 @@ class CartService:
             cart_product.quantity -= quantity
         else:
             cart_product.quantity += quantity
+        
+        if cart_product.quantity < 1:
+            self.db.delete(cart_product)
+
         self.db.commit()
         return GenericResponse(
                 status_code=status.HTTP_200_OK,
@@ -81,7 +85,7 @@ class CartService:
                                                                                 req.product_id)
                     if cart_product:
                         if cart_product.quantity > 1:
-                            return self.__update_only_quantity_in_cart_products(cart_product, 1, True)
+                            return self.__update_only_quantity_in_cart_products(cart_product, req.quantity, True)
                         else:
                             self.db.delete(cart_product)
                             self.db.commit()

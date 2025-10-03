@@ -8,3 +8,4 @@ class CartAddRequest(BaseModel):
 
 class CartRemoveRequest(BaseModel):
     product_id: int
+    quantity: Optional[int] = 1

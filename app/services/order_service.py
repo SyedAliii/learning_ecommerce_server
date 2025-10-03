@@ -19,7 +19,6 @@ class OrderService:
             cart_products_ids = self.db.query(CartProducts).filter(CartProducts.cart_id == cart_id).all()
             return cart_products_ids
         except Exception as e:
-            self.db.rollback()
             raise GenericException(reason=str(e))
 
     def __get_subtotal(self, product_ids_in_cart: List[CartProducts]):
@@ -51,6 +50,18 @@ class OrderService:
         except Exception as e:
             self.db.rollback()
             raise GenericException(reason=str(e))
+        
+    def __update_product_stock(self, product_ids_in_cart: List[CartProducts]):
+        try:
+            for item in product_ids_in_cart:
+                product = self.db.query(Product).filter(Product.id == item.product_id).first()
+                if product:
+                    product.quantity -= item.quantity
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
 
     def __generate_receipt(self, order: Order):
         try:
@@ -65,6 +76,7 @@ class OrderService:
             self.db.add(receipt)
             self.db.commit()
             self.db.refresh(receipt)
+            self.__update_product_stock(product_ids_in_cart)
             return receipt, product_ids_in_cart
         except Exception as e:
             self.db.rollback()
@@ -86,18 +98,24 @@ class OrderService:
             user = self.db.query(User).filter(User.id == user_id).first()
             if user.active_cart_id != None:
                 order = Order()
-                order.status = OrderStatus.CONFIRMED
+                order.status = OrderStatus.PENDING
                 order.user_id = user.id
                 order.cart_id = user.active_cart_id
                 user.active_cart_id = None
                 self.db.add(order)
                 self.db.commit()
+                return GenericResponse(
+                    status_code=status.HTTP_201_CREATED,
+                    msg=f"Order created successfully",
+                )
             else:
+                self.db.rollback()
                 return GenericResponse(
                         status_code=status.HTTP_204_NO_CONTENT,
                         msg=f"No Active Cart for this user"
                     )
         except GenericException:
+            self.db.rollback()
             raise
         except Exception as e:
             self.db.rollback()
@@ -108,10 +126,10 @@ class OrderService:
             order = self.db.query(Order).filter(Order.user_id == user_id).first()
             if order:
                 order.status = req.status
-                self.db.commit()
                 if order.status == OrderStatus.CONFIRMED:
                     receipt, product_ids_in_cart = self.__generate_receipt(order)
                     self.__send_email(receipt)
+                    self.db.commit()
                     return OrderUpdateResponse(
                         id=receipt.id,
                         subtotal=receipt.subtotal,
@@ -124,8 +142,10 @@ class OrderService:
                         msg=f"Order with status: {order.status} updated successfully and email sent",
                     )
                 elif order.status in [OrderStatus.SHIPPED, OrderStatus.DELIVERED]:
+                    product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
                     receipt = self.db.query(Receipt).filter(Receipt.order_id == order.id).first()
                     self.__send_email(receipt)
+                    self.db.commit()
                     return OrderUpdateResponse(
                         id=receipt.id,
                         subtotal=receipt.subtotal,
@@ -137,16 +157,19 @@ class OrderService:
                         status_code=status.HTTP_200_OK,
                         msg=f"Order with status: {order.status} updated successfully and email sent",
                     )
-                return GenericResponse(
-                    status_code=status.HTTP_200_OK,
-                    msg=f"Order status: {order.status} updated successfully"
-                )
+                else:
+                    return GenericResponse(
+                        status_code=status.HTTP_200_OK,
+                        msg=f"Unable to update order status because status not recognized"
+                    )
             else:
+                self.db.rollback()
                 return GenericResponse(
                     status_code=status.HTTP_404_NOT_FOUND,
                     msg=f"Order not found"
                 )
         except GenericException:
+            self.db.rollback()
             raise
         except Exception as e:
             self.db.rollback()
