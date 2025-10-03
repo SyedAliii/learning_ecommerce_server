@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Enum as AlchemyEnum
 from ..db.session import Base
 from sqlalchemy.orm import relationship
-import enum
+import enum 
 
 class ProductStatus(enum.Enum):
     AVAILABLE = "available"
