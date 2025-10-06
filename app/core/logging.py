@@ -1,6 +1,6 @@
 import logging
 import sys
-from .config import settings
+from app.core.config import settings
 import traceback
 
 logger = logging.getLogger("ecommerce_logger")

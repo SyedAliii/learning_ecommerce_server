@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import jwt, JWTError
-from .config import settings
+from app.core.config import settings
 from passlib.context import CryptContext
 
 argon_context = CryptContext(schemes=["argon2"], deprecated="auto")

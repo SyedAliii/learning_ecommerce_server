@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum as AlchemyEnum
-from ..db.session import Base
+from app.db.session import Base
 from sqlalchemy.orm import relationship
 import enum
 

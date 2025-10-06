@@ -1,10 +1,10 @@
-from ....schemas.order import (OrderUpdateRequest, OrderUpdateResponse)
-from ....schemas.generic import GenericResponse
+from app.schemas.order import (OrderUpdateRequest, OrderUpdateResponse)
+from app.schemas.generic import GenericResponse
 from fastapi import APIRouter, Depends
-from ....services.order_service import OrderService
-from ....db.session import get_db
+from app.services.order_service import OrderService
+from app.db.session import get_db
 from sqlalchemy.orm import Session
-from ...deps import get_current_user
+from app.api.deps import get_current_user
 from typing import Optional
 
 router = APIRouter()

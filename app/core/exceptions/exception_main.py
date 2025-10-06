@@ -1,7 +1,7 @@
 from fastapi import Request, FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from ..logging import log_exception
+from app.core.logging import log_exception
 
 class GenericException(Exception):
     def __init__(self, reason: str):

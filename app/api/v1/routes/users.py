@@ -1,16 +1,16 @@
-from ....schemas.user import UserCreateRequest, UserDataResponse
-from ....schemas.generic import GenericResponse
+from app.schemas.user import UserCreateRequest, UserDataResponse
+from app.schemas.generic import GenericResponse
 from fastapi import APIRouter, Depends
-from ....services.user_service import UserService
-from ....db.session import get_db
+from app.services.user_service import UserService
+from app.db.session import get_db
 from sqlalchemy.orm import Session
-from ....schemas.user import UserAuthenticateRequest
+from app.schemas.user import UserAuthenticateRequest
 from fastapi import APIRouter, Depends
-from ....services.user_service import UserService
-from ....db.session import get_db
+from app.services.user_service import UserService
+from app.db.session import get_db
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
-from ....core.security import create_access_token
+from app.core.security import create_access_token
 
 router = APIRouter()
 

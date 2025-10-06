@@ -1,5 +1,5 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
-from ..db.session import Base
+from app.db.session import Base
 from sqlalchemy.orm import relationship
 
 class ProductImage(Base):

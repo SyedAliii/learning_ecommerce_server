@@ -2,15 +2,15 @@ from typing import List
 from app.models.cart import Cart
 from app.models.cart_products import CartProducts
 from app.models.product import Product
-from ..schemas.user import UserCreateRequest, UserAuthenticateRequest, UserAuthenticateResponse, UserResponse, UserDataResponse, UserCartProduct
-from ..schemas.generic import GenericResponse
-from ..schemas.product import ProductBaseModel
+from app.schemas.user import UserCreateRequest, UserAuthenticateRequest, UserAuthenticateResponse, UserResponse, UserDataResponse, UserCartProduct
+from app.schemas.generic import GenericResponse
+from app.schemas.product import ProductBaseModel
 from app.models.user import User, UserRole
 from fastapi import Depends, status
 from sqlalchemy.orm import Session
-from ..core.exceptions.exception_main import GenericException
-from ..core.security import verify_password, get_password_hash
-from ..core.config import settings
+from app.core.exceptions.exception_main import GenericException
+from app.core.security import verify_password, get_password_hash
+from app.core.config import settings
 
 class UserService:
     def __init__(self, db: Session):

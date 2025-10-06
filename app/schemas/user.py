@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
-from ..models.user import UserRole
+from app.models.user import UserRole
 from typing import Optional, List
-from ..schemas.product import ProductBaseModel
+from app.schemas.product import ProductBaseModel
 from datetime import timedelta
 
 class UserCreateRequest(BaseModel):

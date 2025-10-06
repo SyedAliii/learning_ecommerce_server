@@ -1,14 +1,15 @@
 
 import shutil
+from typing import List
 from app.models.product_image import ProductImage
-from ..schemas.product import (AllProductsGetResponse, ProductAddRequest, ProductBaseModel, SingleProductGetResponse,
+from app.schemas.product import (AllProductsGetResponse, ProductAddRequest, ProductBaseModel, SingleProductGetResponse,
     ProductUpdateRequest)
-from ..schemas.generic import GenericResponse
-from ..models.product import Product, ProductStatus
-from ..models.user import UserRole, User
+from app.schemas.generic import GenericResponse
+from app.models.product import Product, ProductStatus
+from app.models.user import UserRole, User
 from fastapi import status, UploadFile
 from sqlalchemy.orm import Session
-from ..core.exceptions.exception_main import GenericException
+from app.core.exceptions.exception_main import GenericException
 from app.core.config import settings
 import os
 import app.utils.str_helper as str_helper
@@ -68,7 +69,7 @@ class ProductService:
             product_list = []
             for product in products:
                 product_data = product.__dict__
-                product_images = self.db.query(ProductImage).filter(ProductImage.product_id == product.id).all()
+                product_images : List[ProductImage] = product.images
                 product_model = ProductBaseModel(**product_data, images=[img.url for img in product_images])
                 product_list.append(product_model)
 
@@ -84,7 +85,7 @@ class ProductService:
             if not product:
                 raise GenericException(reason=f"Product not found with id: {product_id}")
             
-            product_images = self.db.query(ProductImage).filter(ProductImage.product_id == product.id).all()
+            product_images : List[ProductImage] = product.images
             return SingleProductGetResponse(product=ProductBaseModel(**product.__dict__,
                         images=[img.url for img in product_images]))
         except GenericException:

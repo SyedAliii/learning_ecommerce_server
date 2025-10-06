@@ -1,10 +1,10 @@
-from ....schemas.cart import (CartAddRequest, CartRemoveRequest)
-from ....schemas.generic import GenericResponse
+from app.schemas.cart import (CartAddRequest, CartRemoveRequest)
+from app.schemas.generic import GenericResponse
 from fastapi import APIRouter, Depends
-from ....services.cart_service import CartService
-from ....db.session import get_db
+from app.services.cart_service import CartService
+from app.db.session import get_db
 from sqlalchemy.orm import Session
-from ...deps import get_current_user
+from app.api.deps import get_current_user
 
 router = APIRouter()
 

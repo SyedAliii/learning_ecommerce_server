@@ -1,13 +1,13 @@
-from ..models.cart_products import CartProducts
-from ..models.product import Product
-from ..models.receipt import Receipt
-from ..schemas.order import OrderUpdateRequest, OrderUpdateResponse
-from ..schemas.generic import GenericResponse
-from ..models.order import Order, OrderStatus
-from ..models.user import User
+from app.models.cart_products import CartProducts
+from app.models.product import Product
+from app.models.receipt import Receipt
+from app.schemas.order import OrderUpdateRequest, OrderUpdateResponse
+from app.schemas.generic import GenericResponse
+from app.models.order import Order, OrderStatus
+from app.models.user import User
 from fastapi import status
 from sqlalchemy.orm import Session
-from ..core.exceptions.exception_main import GenericException
+from app.core.exceptions.exception_main import GenericException
 from typing import List
 from app.core.config import settings
 import smtplib

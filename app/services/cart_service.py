@@ -1,11 +1,11 @@
-from ..schemas.cart import (CartAddRequest, CartRemoveRequest)
-from ..schemas.generic import GenericResponse
-from ..models.cart_products import CartProducts
-from ..models.cart import Cart
-from ..models.user import User
+from app.schemas.cart import (CartAddRequest, CartRemoveRequest)
+from app.schemas.generic import GenericResponse
+from app.models.cart_products import CartProducts
+from app.models.cart import Cart
+from app.models.user import User
 from fastapi import status
 from sqlalchemy.orm import Session
-from ..core.exceptions.exception_main import GenericException
+from app.core.exceptions.exception_main import GenericException
 
 class CartService:
     def __init__(self, db: Session):

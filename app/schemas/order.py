@@ -1,7 +1,7 @@
 from typing import List
 from pydantic import BaseModel
 from typing import Optional
-from ..models.order import OrderStatus
+from app.models.order import OrderStatus
 
 class OrderUpdateRequest(BaseModel):
     status: OrderStatus

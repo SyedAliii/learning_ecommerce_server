@@ -1,8 +1,8 @@
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends
 from jose import jwt, JWTError
-from ..core.config import settings
-from ..core.exceptions.exception_main import InvalidCredentialsException
+from app.core.config import settings
+from app.core.exceptions.exception_main import InvalidCredentialsException
 
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
 

@@ -1,13 +1,13 @@
 import shutil
 from typing import List
-from ....schemas.product import (ProductAddRequest, AllProductsGetResponse, SingleProductGetResponse,
+from app.schemas.product import (ProductAddRequest, AllProductsGetResponse, SingleProductGetResponse,
     ProductUpdateRequest)
-from ....schemas.generic import GenericResponse
+from app.schemas.generic import GenericResponse
 from fastapi import APIRouter, Depends, File, Form, UploadFile
-from ....services.product_service import ProductService
-from ....db.session import get_db
+from app.services.product_service import ProductService
+from app.db.session import get_db
 from sqlalchemy.orm import Session
-from ...deps import get_current_user
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
