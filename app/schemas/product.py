@@ -27,14 +27,14 @@ class ProductAddRequest(BaseModel):
             quantity=quantity, category=category, subcategory=subcategory, images=images)
 
 class ProductBaseModel(BaseModel):
-    id: int
+    id: str
     title: str
     description: str
     price: int
-    discount: int
     quantity: int
     category: str
     subcategory: str
+    images: List[str] = []
 
 class AllProductsGetResponse(BaseModel):
     products: List[ProductBaseModel]

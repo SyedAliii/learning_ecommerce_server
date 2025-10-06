@@ -9,4 +9,4 @@ class ProductImage(Base):
     url = Column(String, nullable=False)
     product_id = Column(String, ForeignKey("products.id"), nullable=False)
 
-    # product = relationship("Product", back_populates="images")
+    product = relationship("Product", back_populates="images")

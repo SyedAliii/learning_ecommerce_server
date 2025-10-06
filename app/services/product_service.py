@@ -65,7 +65,14 @@ class ProductService:
     def get_all(self):
         try:
             products = self.db.query(Product).filter(Product.status == ProductStatus.AVAILABLE).all()
-            return AllProductsGetResponse(products=[ProductBaseModel(**product.__dict__) for product in products])
+            product_list = []
+            for product in products:
+                product_data = product.__dict__
+                product_images = self.db.query(ProductImage).filter(ProductImage.product_id == product.id).all()
+                product_model = ProductBaseModel(**product_data, images=[img.url for img in product_images])
+                product_list.append(product_model)
+
+            return AllProductsGetResponse(products=product_list)
         except GenericException:
             raise
         except Exception as e:
@@ -76,7 +83,10 @@ class ProductService:
             product = self.db.query(Product).filter(Product.id == product_id and Product.status == ProductStatus.AVAILABLE).first()
             if not product:
                 raise GenericException(reason=f"Product not found with id: {product_id}")
-            return SingleProductGetResponse(product=ProductBaseModel(**product.__dict__))
+            
+            product_images = self.db.query(ProductImage).filter(ProductImage.product_id == product.id).all()
+            return SingleProductGetResponse(product=ProductBaseModel(**product.__dict__,
+                        images=[img.url for img in product_images]))
         except GenericException:
             raise
         except Exception as e:
