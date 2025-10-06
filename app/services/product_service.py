@@ -2,7 +2,7 @@
 import shutil
 from typing import List
 from app.models.product_image import ProductImage
-from app.schemas.product import (AllProductsGetResponse, ProductAddRequest, ProductBaseModel, SingleProductGetResponse,
+from app.schemas.product import (AllProductsGetResponse, ProductAddRequest, ProductBaseModel, SingleProductGetRequest, SingleProductGetResponse,
     ProductUpdateRequest)
 from app.schemas.generic import GenericResponse
 from app.models.product import Product, ProductStatus
@@ -42,6 +42,8 @@ class ProductService:
             new_product.category = product_add_request.category
             new_product.subcategory = product_add_request.subcategory
             new_product.status = ProductStatus.AVAILABLE
+            new_product.url_slug = str_helper.generate_product_slug(new_product.category, new_product.subcategory,
+                new_product.title, new_product.id)
 
             for image in product_add_request.images:
                 new_product_image = ProductImage()
@@ -70,7 +72,7 @@ class ProductService:
             for product in products:
                 product_data = product.__dict__
                 product_images : List[ProductImage] = product.images
-                product_model = ProductBaseModel(**product_data, images=[img.url for img in product_images])
+                product_model = ProductBaseModel(**product_data, product_urls=[img.url for img in product_images])
                 product_list.append(product_model)
 
             return AllProductsGetResponse(products=product_list)
@@ -79,19 +81,20 @@ class ProductService:
         except Exception as e:
             raise GenericException(reason=str(e))
         
-    def get_single(self, product_id: str):
+    def get_single(self, get_req: SingleProductGetRequest):
         try:
-            product = self.db.query(Product).filter(Product.id == product_id and Product.status == ProductStatus.AVAILABLE).first()
+            url_slug = f"{get_req.category}/{get_req.subcategory}/{get_req.title}/{get_req.id}"
+            product = self.db.query(Product).filter(Product.url_slug == url_slug and Product.status == ProductStatus.AVAILABLE).first()
             if not product:
-                raise GenericException(reason=f"Product not found with id: {product_id}")
+                raise GenericException(reason=f"Product not found with id: {get_req.id}")
             
             product_images : List[ProductImage] = product.images
             return SingleProductGetResponse(product=ProductBaseModel(**product.__dict__,
-                        images=[img.url for img in product_images]))
+                        product_urls=[img.url for img in product_images]))
         except GenericException:
             raise
         except Exception as e:
-            raise GenericException(reason=f"Error getting product with id {product_id}: {str(e)}")
+            raise GenericException(reason=f"Error getting product with id {get_req.id}: {str(e)}")
 
     def update(self, product_update_request: ProductUpdateRequest, user_id: int):
         try:

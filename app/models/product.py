@@ -18,6 +18,7 @@ class Product(Base):
     category = Column(String, nullable=False)
     subcategory = Column(String, nullable=False)
     status = Column(AlchemyEnum(ProductStatus), nullable=False)
+    url_slug = Column(String, unique=True, nullable=False)
 
     images = relationship("ProductImage", back_populates="product")
     # cart_products = relationship("CartProducts", back_populates="products")

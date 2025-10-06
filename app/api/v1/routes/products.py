@@ -1,7 +1,7 @@
 import shutil
 from typing import List
-from app.schemas.product import (ProductAddRequest, AllProductsGetResponse, SingleProductGetResponse,
-    ProductUpdateRequest)
+from app.schemas.product import (ProductAddRequest, AllProductsGetResponse, SingleProductGetRequest,
+    SingleProductGetResponse, ProductUpdateRequest)
 from app.schemas.generic import GenericResponse
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from app.services.product_service import ProductService
@@ -23,10 +23,11 @@ async def get_all_products(db: Session = Depends(get_db)):
     return product_service.get_all()
 
 
-@router.get("/get_single_product/{category}/{sub_category}/{title}", response_model=SingleProductGetResponse)
-async def get_single_product(id: str, db: Session = Depends(get_db)):
+@router.get("/get_single_product/{category}/{sub_category}/{title}/{id}", response_model=SingleProductGetResponse)
+async def get_single_product(category: str, sub_category: str, title: str, id: str, db: Session = Depends(get_db)):
     product_service = ProductService(db)
-    return product_service.get_single(product_id=id)
+    get_req = SingleProductGetRequest(title=title, category=category, subcategory=sub_category, id=id)
+    return product_service.get_single(get_req)
 
 @router.put("/update_product", response_model=GenericResponse)
 async def update_product(product_update_request: ProductUpdateRequest, user_id: int = Depends(get_current_user),

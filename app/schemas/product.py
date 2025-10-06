@@ -34,10 +34,17 @@ class ProductBaseModel(BaseModel):
     quantity: int
     category: str
     subcategory: str
-    images: List[str] = []
+    url_slug: str
+    product_urls: List[str] = []
 
 class AllProductsGetResponse(BaseModel):
     products: List[ProductBaseModel]
+
+class SingleProductGetRequest(BaseModel):
+    title: str
+    category: str
+    subcategory: str
+    id: str
 
 class SingleProductGetResponse(BaseModel):
     product: ProductBaseModel
