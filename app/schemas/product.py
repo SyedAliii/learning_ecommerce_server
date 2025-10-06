@@ -58,3 +58,9 @@ class ProductUpdateRequest(BaseModel):
     quantity: Optional[int] = None
     category: Optional[str] = None
     subcategory: Optional[str] = None
+
+class GetAllCategoriesSubcategoriesResponse(BaseModel):
+    categories_subcategories: dict[str, List[str]]
+
+class GetAllSubcategoriesResponse(BaseModel):
+    subcategories: List[str]

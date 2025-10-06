@@ -1,7 +1,7 @@
 import shutil
 from typing import List
 from app.schemas.product import (ProductAddRequest, AllProductsGetResponse, SingleProductGetRequest,
-    SingleProductGetResponse, ProductUpdateRequest)
+    SingleProductGetResponse, ProductUpdateRequest, GetAllCategoriesSubcategoriesResponse, GetAllSubcategoriesResponse)
 from app.schemas.generic import GenericResponse
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from app.services.product_service import ProductService
@@ -40,6 +40,11 @@ async def delete_product(product_id: str, user_id: int = Depends(get_current_use
                           db: Session = Depends(get_db)):
     product_service = ProductService(db)
     return product_service.delete(product_id=product_id, user_id=user_id)
+
+@router.get("/get_all_categories_subcategories", response_model=GetAllCategoriesSubcategoriesResponse)
+async def get_all_categories_subcategories(db: Session = Depends(get_db)):
+    product_service = ProductService(db)
+    return product_service.get_all_categories_subcategories()
 
 @router.post("/upload_test")
 async def upload_test( title: str = Form(...), images: List[UploadFile] = File(...)):

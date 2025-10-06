@@ -38,8 +38,8 @@ class UserService:
                 description=product.description,
                 price=product.price,
                 total_quantity=product.quantity,
-                category=product.category,
-                subcategory=product.subcategory,
+                category=product.category_id,
+                subcategory=product.subcategory_id,
                 quantity_in_cart=next((cp.quantity for cp in cart_products_ids if cp.product_id == product.id), 0)
             )
             user_cart_products.append(user_cart_product)

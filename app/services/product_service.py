@@ -1,9 +1,12 @@
 
 import shutil
 from typing import List
+from app.models.categories_subcategories import CategorySubcategory
 from app.models.product_image import ProductImage
+from app.models.category import Category
+from app.models.subcategory import Subcategory
 from app.schemas.product import (AllProductsGetResponse, ProductAddRequest, ProductBaseModel, SingleProductGetRequest, SingleProductGetResponse,
-    ProductUpdateRequest)
+    ProductUpdateRequest, GetAllCategoriesSubcategoriesResponse, GetAllSubcategoriesResponse)
 from app.schemas.generic import GenericResponse
 from app.models.product import Product, ProductStatus
 from app.models.user import UserRole, User
@@ -33,16 +36,21 @@ class ProductService:
             if user.roles != UserRole.ADMIN:
                 raise GenericException(reason="User not authorized to add products")
 
+            if not self.db.query(Category).filter(Category.id == product_add_request.category).first():
+                raise GenericException(reason=f"Category not found with id: {product_add_request.category}")
+            if not self.db.query(Subcategory).filter(Subcategory.id == product_add_request.subcategory).first():
+                raise GenericException(reason=f"Subcategory not found with id: {product_add_request.subcategory}")
+
             new_product = Product()
             new_product.id = str_helper.generate_unique_uuid()
             new_product.title = product_add_request.title
             new_product.description = product_add_request.description
             new_product.price = product_add_request.price
             new_product.quantity = product_add_request.quantity
-            new_product.category = product_add_request.category
-            new_product.subcategory = product_add_request.subcategory
+            new_product.category_id = product_add_request.category
+            new_product.subcategory_id = product_add_request.subcategory
             new_product.status = ProductStatus.AVAILABLE
-            new_product.url_slug = str_helper.generate_product_slug(new_product.category, new_product.subcategory,
+            new_product.url_slug = str_helper.generate_product_slug(new_product.category_id, new_product.subcategory_id,
                 new_product.title, new_product.id)
 
             for image in product_add_request.images:
@@ -150,4 +158,19 @@ class ProductService:
             raise
         except Exception as e:
             self.db.rollback()
+            raise GenericException(reason=str(e))
+        
+    def get_all_categories_subcategories(self):
+        try:
+            categories = self.db.query(Category).all()
+            
+            cat_subcat_list: dict[str, List[str]] = {}
+            for cat in categories:
+                sub = self.db.query(CategorySubcategory).filter(CategorySubcategory.category_id == cat.id).all()
+                ls = [s.subcategory_id for s in sub]
+                cat_subcat_list[cat.id] = ls
+            return GetAllCategoriesSubcategoriesResponse(categories_subcategories=cat_subcat_list)
+        except GenericException:
+            raise
+        except Exception as e:
             raise GenericException(reason=str(e))
