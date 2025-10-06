@@ -15,7 +15,7 @@ class CartService:
         cart_product = self.db.query(CartProducts).filter(CartProducts.cart_id == cart_id).first()
         return cart_product
     
-    def __check_product_exists_in_cart_products(self, cart_id: int, product_id: int):
+    def __check_product_exists_in_cart_products(self, cart_id: int, product_id: str):
         cart_product = self.db.query(CartProducts).filter(CartProducts.cart_id == cart_id,
                                                           CartProducts.product_id == product_id).first()
         return cart_product
@@ -35,7 +35,7 @@ class CartService:
                 msg=f"Product quantity updated in cart"
             )
     
-    def __add_new_product_to_cart_products(self, cart_id: int, product_id: int, quantity: int):
+    def __add_new_product_to_cart_products(self, cart_id: int, product_id: str, quantity: int):
         new_cart_product = CartProducts()
         new_cart_product.cart_id = cart_id
         new_cart_product.product_id = product_id

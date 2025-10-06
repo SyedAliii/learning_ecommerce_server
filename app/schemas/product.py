@@ -1,15 +1,30 @@
 from typing import List
 from pydantic import BaseModel
 from typing import Optional
+from fastapi import File, Form, UploadFile
 
 class ProductAddRequest(BaseModel):
     title: str
     description: str
     price: int
-    discount: int
     quantity: int
     category: str
     subcategory: str
+    images: List[UploadFile] = []
+    
+    @classmethod
+    def as_form(
+        cls,
+        title: str = Form(...),
+        description: str = Form(...),
+        price: float = Form(...),
+        quantity: int = Form(...),
+        category: str = Form(...),
+        subcategory: str = Form(...),
+        images: List[UploadFile] = File(...)
+    ):
+        return cls(title=title, description=description, price=price,
+            quantity=quantity, category=category, subcategory=subcategory, images=images)
 
 class ProductBaseModel(BaseModel):
     id: int

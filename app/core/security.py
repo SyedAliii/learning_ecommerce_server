@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import jwt, JWTError
 from .config import settings
@@ -8,10 +8,12 @@ argon_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 def create_access_token(email: str, user_id: int, expires_delta: Optional[timedelta] = None):
     encode = {"sub": email, "id": user_id}
+    utc_dt = datetime.now(timezone.utc)
+    dt = utc_dt.astimezone()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = dt + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = dt + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     encode.update({"exp": int(expire.timestamp())})
     return jwt.encode(encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 

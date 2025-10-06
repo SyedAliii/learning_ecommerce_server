@@ -7,6 +7,6 @@ class ProductImage(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     url = Column(String, nullable=False)
-    # images = Column(Integer, ForeignKey("products.id"), nullable=False)
+    product_id = Column(String, ForeignKey("products.id"), nullable=False)
 
     # product = relationship("Product", back_populates="images")
