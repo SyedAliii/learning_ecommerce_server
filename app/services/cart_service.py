@@ -3,6 +3,7 @@ from app.schemas.generic import GenericResponse
 from app.models.cart_products import CartProducts
 from app.models.cart import Cart
 from app.models.user import User
+from app.models.product import Product
 from fastapi import status
 from sqlalchemy.orm import Session
 from app.core.exceptions.exception_main import GenericException
@@ -36,6 +37,10 @@ class CartService:
             )
     
     def __add_new_product_to_cart_products(self, cart_id: int, product_id: str, quantity: int):
+        product = self.db.query(Product).filter(Product.id == product_id).first()
+        if product.quantity < quantity:
+            raise GenericException(reason=f"Unable to add product: Low Stock")
+
         new_cart_product = CartProducts()
         new_cart_product.cart_id = cart_id
         new_cart_product.product_id = product_id

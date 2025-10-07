@@ -4,7 +4,7 @@ from app.models.receipt import Receipt
 from app.schemas.order import OrderUpdateRequest, OrderUpdateResponse
 from app.schemas.generic import GenericResponse
 from app.models.order import Order, OrderStatus
-from app.models.user import User
+from app.models.user import User, UserRole
 from fastapi import status
 from sqlalchemy.orm import Session
 from app.core.exceptions.exception_main import GenericException
@@ -66,10 +66,17 @@ class OrderService:
         except Exception as e:
             self.db.rollback()
             raise GenericException(reason=str(e))
+    
+    def __check_product_stock(self, product_ids_in_cart: List[CartProducts]):
+        for item in product_ids_in_cart:
+            product = self.db.query(Product).filter(Product.id == item.product_id).first()
+            if product:
+                if product.quantity < item.quantity:
+                    return False, f"Product {product.title} is out of stock or does not have enough quantity"
+        return True, None
 
-    def __generate_receipt(self, order: Order):
+    def __generate_receipt(self, product_ids_in_cart: List[CartProducts], order: Order):
         try:
-            product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
             receipt = Receipt()
             receipt.subtotal = self.__get_subtotal(product_ids_in_cart)
             receipt.tax = receipt.subtotal * 0.1
@@ -80,13 +87,24 @@ class OrderService:
             self.db.add(receipt)
             self.db.commit()
             self.db.refresh(receipt)
-            self.__update_product_stock(product_ids_in_cart)
-            return receipt, product_ids_in_cart
+            return receipt
         except Exception as e:
             self.db.rollback()
             raise GenericException(reason=str(e))
-        
-    def __send_email(self, receipt: Receipt):
+    
+    def __get_order_status_string(self, status_code: int):
+        if status_code == OrderStatus.PENDING:
+            return "Pending"
+        elif status_code == OrderStatus.CONFIRMED:
+            return "Confirmed"
+        elif status_code == OrderStatus.SHIPPED:
+            return "Shipped"
+        elif status_code == OrderStatus.DELIVERED:
+            return "Delivered"
+        else:
+            return "Unknown"
+
+    def __send_email(self, order_status: str, receipt: Receipt):
         try:
             cart_id = self.db.query(Order).filter(Order.id == receipt.order_id).first().cart_id
             product_ids_in_cart = self.__get_product_ids_in_cart(cart_id)
@@ -99,7 +117,7 @@ class OrderService:
             message = MIMEMultipart()
             message["From"] = sender_email
             message["To"] = receiver_email
-            message["Subject"] = "Receipt for Your Order"
+            message["Subject"] = "Receipt for Your Order - Status: " + self.__get_order_status_string(order_status)
 
             body = "This is an auto generated receipt for your recent order.\n\n"
             for product in products_breakdown:
@@ -120,12 +138,11 @@ class OrderService:
                 server.starttls()
                 server.login(sender_email, app_password)
                 server.sendmail(sender_email, receiver_email, message.as_string())
-                return True
+                return True, None
             finally:
                 server.quit()
         except Exception as e:
-            self.db.rollback()
-            raise GenericException(reason=str(e))
+            return False, str(e)
 
     def create(self, user_id: int):
         try:
@@ -135,7 +152,6 @@ class OrderService:
                 order.status = OrderStatus.PENDING
                 order.user_id = user.id
                 order.cart_id = user.active_cart_id
-                user.active_cart_id = None
                 self.db.add(order)
                 self.db.commit()
                 return GenericResponse(
@@ -157,50 +173,53 @@ class OrderService:
         
     def update(self, req: OrderUpdateRequest, user_id: int):
         try:
-            order = self.db.query(Order).filter(Order.user_id == user_id).first()
-            if order:
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if req.status == OrderStatus.CONFIRMED:
+                order = self.db.query(Order).filter(Order.user_id == user_id).first()
                 order.status = req.status
-                if order.status == OrderStatus.CONFIRMED:
-                    receipt, product_ids_in_cart = self.__generate_receipt(order)
-                    self.__send_email(receipt)
-                    self.db.commit()
-                    return OrderUpdateResponse(
-                        id=receipt.id,
-                        subtotal=receipt.subtotal,
-                        tax=receipt.tax,
-                        shipping_fee=receipt.shipping_fee,
-                        grand_total=receipt.grand_total,
-                        products=self.__get_products_price_breakdown(product_ids_in_cart),
-                        order=order.status,
-                        status_code=status.HTTP_200_OK,
-                        msg=f"Order with status: {order.status} updated successfully and email sent",
-                    )
-                elif order.status in [OrderStatus.SHIPPED, OrderStatus.DELIVERED]:
-                    product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
-                    receipt = self.db.query(Receipt).filter(Receipt.order_id == order.id).first()
-                    self.__send_email(receipt)
-                    self.db.commit()
-                    return OrderUpdateResponse(
-                        id=receipt.id,
-                        subtotal=receipt.subtotal,
-                        tax=receipt.tax,
-                        shipping_fee=receipt.shipping_fee,
-                        grand_total=receipt.grand_total,
-                        products=self.__get_products_price_breakdown(product_ids_in_cart),
-                        order=order.status,
-                        status_code=status.HTTP_200_OK,
-                        msg=f"Order with status: {order.status} updated successfully and email sent",
+                product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
+                stock_check_result, product_stock_reason = self.__check_product_stock(product_ids_in_cart)
+                if stock_check_result == False:
+                    raise GenericException(
+                        reason=product_stock_reason
                     )
                 else:
-                    return GenericResponse(
+                    user.active_cart_id = None
+                    self.__update_product_stock(product_ids_in_cart)
+                    receipt = self.__generate_receipt(product_ids_in_cart, order)
+                    send_email_status, reason = self.__send_email(order.status, receipt)
+                    self.db.commit()
+                    return OrderUpdateResponse(
+                        id=receipt.id,
+                        subtotal=receipt.subtotal,
+                        tax=receipt.tax,
+                        shipping_fee=receipt.shipping_fee,
+                        grand_total=receipt.grand_total,
+                        products=self.__get_products_price_breakdown(product_ids_in_cart),
+                        order=order.status,
                         status_code=status.HTTP_200_OK,
-                        msg=f"Unable to update order status because status not recognized"
+                        msg=f"Order with status: {order.status} updated successfully and email sent status: {send_email_status}. Reason: {reason}",
                     )
+            elif req.status in [OrderStatus.SHIPPED, OrderStatus.DELIVERED] and user.roles == UserRole.ADMIN:
+                order = self.db.query(Order).filter(Order.user_id == req.user_id and Order.cart_id == req.cart_id).first()
+                product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
+                receipt = self.db.query(Receipt).filter(Receipt.order_id == order.id).first()
+                send_email_status, reason = self.__send_email(order.status, receipt)
+                self.db.commit()
+                return OrderUpdateResponse(
+                    id=receipt.id,
+                    subtotal=receipt.subtotal,
+                    tax=receipt.tax,
+                    shipping_fee=receipt.shipping_fee,
+                    grand_total=receipt.grand_total,
+                    products=self.__get_products_price_breakdown(product_ids_in_cart),
+                    order=order.status,
+                    status_code=status.HTTP_200_OK,
+                    msg=f"Order with status: {order.status} updated successfully and email sent status: {send_email_status}. Reason: {reason}",
+                )
             else:
-                self.db.rollback()
-                return GenericResponse(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    msg=f"Order not found"
+                raise GenericException(
+                    reason=f"Unable to update order status because status not recognized"
                 )
         except GenericException:
             self.db.rollback()

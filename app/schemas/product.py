@@ -8,8 +8,8 @@ class ProductAddRequest(BaseModel):
     description: str
     price: int
     quantity: int
-    category: str
-    subcategory: str
+    category_id: str
+    subcategory_id: str
     images: List[UploadFile] = []
     
     @classmethod
@@ -19,12 +19,12 @@ class ProductAddRequest(BaseModel):
         description: str = Form(...),
         price: float = Form(...),
         quantity: int = Form(...),
-        category: str = Form(...),
-        subcategory: str = Form(...),
+        category_id: str = Form(...),
+        subcategory_id: str = Form(...),
         images: List[UploadFile] = File(...)
     ):
         return cls(title=title, description=description, price=price,
-            quantity=quantity, category=category, subcategory=subcategory, images=images)
+            quantity=quantity, category_id=category_id, subcategory_id=subcategory_id, images=images)
 
 class ProductBaseModel(BaseModel):
     id: str
@@ -32,32 +32,32 @@ class ProductBaseModel(BaseModel):
     description: str
     price: int
     quantity: int
-    category: str
-    subcategory: str
+    category_id: str
+    subcategory_id: str
     url_slug: str
-    product_urls: List[str] = []
+    product_img_urls: List[str] = []
 
 class AllProductsGetResponse(BaseModel):
     products: List[ProductBaseModel]
 
 class SingleProductGetRequest(BaseModel):
     title: str
-    category: str
-    subcategory: str
+    category_id: str
+    subcategory_id: str
     id: str
 
 class SingleProductGetResponse(BaseModel):
     product: ProductBaseModel
 
 class ProductUpdateRequest(BaseModel):
-    id: int
+    id: str
     title: Optional[str] = None
     description: Optional[str] = None
     price: Optional[int] = None
     discount: Optional[int] = None
     quantity: Optional[int] = None
-    category: Optional[str] = None
-    subcategory: Optional[str] = None
+    category_id: Optional[str] = None
+    subcategory_id: Optional[str] = None
 
 class GetAllCategoriesSubcategoriesResponse(BaseModel):
     categories_subcategories: dict[str, List[str]]

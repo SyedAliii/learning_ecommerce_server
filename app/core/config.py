@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     PRODUCT_IMAGES_DIR: str = "assets/product_images/"
     ROOT_FOLDER: str = "app/"
     URL : str = "http://localhost:8000/"
+    FUZZY_SEARCH_THRESHOLD: int = 60
 
     class Config:
         env_file = ".env"

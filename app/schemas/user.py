@@ -31,7 +31,7 @@ class UserAuthenticateResponse(BaseModel):
     user: UserResponse = None
 
 class UserCartProduct(BaseModel):
-    id: int
+    id: str
     title: str
     description: str
     price: int

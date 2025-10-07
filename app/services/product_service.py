@@ -80,7 +80,7 @@ class ProductService:
             for product in products:
                 product_data = product.__dict__
                 product_images : List[ProductImage] = product.images
-                product_model = ProductBaseModel(**product_data, product_urls=[img.url for img in product_images])
+                product_model = ProductBaseModel(**product_data, product_img_urls=[img.url for img in product_images])
                 product_list.append(product_model)
 
             return AllProductsGetResponse(products=product_list)
@@ -91,14 +91,14 @@ class ProductService:
         
     def get_single(self, get_req: SingleProductGetRequest):
         try:
-            url_slug = f"{get_req.category}/{get_req.subcategory}/{get_req.title}/{get_req.id}"
+            url_slug = f"{get_req.category_id}/{get_req.subcategory_id}/{get_req.title}/{get_req.id}"
             product = self.db.query(Product).filter(Product.url_slug == url_slug and Product.status == ProductStatus.AVAILABLE).first()
             if not product:
                 raise GenericException(reason=f"Product not found with id: {get_req.id}")
             
             product_images : List[ProductImage] = product.images
             return SingleProductGetResponse(product=ProductBaseModel(**product.__dict__,
-                        product_urls=[img.url for img in product_images]))
+                        product_img_urls=[img.url for img in product_images]))
         except GenericException:
             raise
         except Exception as e:

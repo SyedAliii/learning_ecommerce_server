@@ -26,7 +26,7 @@ async def get_all_products(db: Session = Depends(get_db)):
 @router.get("/get_single_product/{category}/{sub_category}/{title}/{id}", response_model=SingleProductGetResponse)
 async def get_single_product(category: str, sub_category: str, title: str, id: str, db: Session = Depends(get_db)):
     product_service = ProductService(db)
-    get_req = SingleProductGetRequest(title=title, category=category, subcategory=sub_category, id=id)
+    get_req = SingleProductGetRequest(title=title, category_id=category, subcategory_id=sub_category, id=id)
     return product_service.get_single(get_req)
 
 @router.put("/update_product", response_model=GenericResponse)

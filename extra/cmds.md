@@ -9,4 +9,5 @@
 - pip install python-jose
 - pip install argon2-cffi
 - pip install passlib[argon2]
-
+- pip install python-slugify
+- pip install rapidfuzz
