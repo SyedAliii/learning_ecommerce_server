@@ -104,7 +104,7 @@ class OrderService:
         else:
             return "Unknown"
 
-    def __send_email(self, order_status: str, receipt: Receipt):
+    def __send_email(self, user: User, order_status: str, receipt: Receipt):
         try:
             cart_id = self.db.query(Order).filter(Order.id == receipt.order_id).first().cart_id
             product_ids_in_cart = self.__get_product_ids_in_cart(cart_id)
@@ -117,7 +117,7 @@ class OrderService:
             message = MIMEMultipart()
             message["From"] = sender_email
             message["To"] = receiver_email
-            message["Subject"] = "Receipt for Your Order - Status: " + self.__get_order_status_string(order_status)
+            message["Subject"] = f"Receipt for Your Order Id: {receipt.id} - Status: " + self.__get_order_status_string(order_status)
 
             body = "This is an auto generated receipt for your recent order.\n\n"
             for product in products_breakdown:
@@ -128,7 +128,8 @@ class OrderService:
             body += f"Subtotal: {receipt.subtotal}\n"
             body += f"Tax: {receipt.tax}\n"
             body += f"Shipping Fee: {receipt.shipping_fee}\n"
-            body += f"Grand Total: {receipt.grand_total}\n"
+            body += f"Grand Total: {receipt.grand_total}\n\n"
+            body += f"Addressed to: {user.address}\n"
             body += "\nThank you for shopping with us!"
 
             message.attach(MIMEText(body, "plain"))
@@ -189,7 +190,7 @@ class OrderService:
                 user.active_cart_id = None
                 self.__update_product_stock(product_ids_in_cart)
                 receipt = self.__generate_receipt(product_ids_in_cart, order)
-                send_email_status, reason = self.__send_email(order.status, receipt)
+                send_email_status, reason = self.__send_email(user, order.status, receipt)
                 self.db.commit()
                 return OrderConfirmResponse(
                     id=receipt.id,
@@ -219,7 +220,7 @@ class OrderService:
             order.status = OrderStatus.SHIPPED
             product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
             receipt = self.db.query(Receipt).filter(Receipt.order_id == order.id).first()
-            send_email_status, reason = self.__send_email(order.status, receipt)
+            send_email_status, reason = self.__send_email(user, order.status, receipt)
             self.db.commit()
             return OrderShippedResponse(
                 id=receipt.id,
@@ -249,7 +250,7 @@ class OrderService:
             order.status = OrderStatus.DELIVERED
             product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
             receipt = self.db.query(Receipt).filter(Receipt.order_id == order.id).first()
-            send_email_status, reason = self.__send_email(order.status, receipt)
+            send_email_status, reason = self.__send_email(user, order.status, receipt)
             self.db.commit()
             return OrderDeliveredResponse(
                 id=receipt.id,
