@@ -1,4 +1,4 @@
-from app.schemas.cart import (CartAddRequest, CartRemoveRequest)
+from app.schemas.cart import (CartAddRequest, CartRemoveRequest, CartViewResponse)
 from app.schemas.generic import GenericResponse
 from fastapi import APIRouter, Depends
 from app.services.cart_service import CartService
@@ -22,3 +22,8 @@ async def remove_cart(cart_remove_request: CartRemoveRequest, user_id: int = Dep
 async def delete_cart(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
     cart_service = CartService(db)
     return cart_service.delete(user_id)
+
+@router.post("/view_cart", response_model=CartViewResponse)
+async def view_cart(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    cart_service = CartService(db)
+    return cart_service.view_cart(user_id)

@@ -1,4 +1,5 @@
-from app.schemas.cart import (CartAddRequest, CartRemoveRequest)
+from app.models.product_image import ProductImage
+from app.schemas.cart import (CartAddRequest, CartRemoveRequest, CartViewResponse)
 from app.schemas.generic import GenericResponse
 from app.models.cart_products import CartProducts
 from app.models.cart import Cart
@@ -7,6 +8,10 @@ from app.models.product import Product
 from fastapi import status
 from sqlalchemy.orm import Session
 from app.core.exceptions.exception_main import GenericException
+from app.schemas.product import ProductBaseModel
+from typing import List
+
+from app.schemas.user import UserCartProduct
 
 class CartService:
     def __init__(self, db: Session):
@@ -129,6 +134,43 @@ class CartService:
                 status_code=status.HTTP_200_OK,
                 msg=f"Cart deleted successfully"
             )
+        except GenericException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
+        
+    def view_cart(self, user_id: int):
+        try:
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if user.active_cart_id != None:
+                cart_products = self.db.query(CartProducts).filter(CartProducts.cart_id == user.active_cart_id).all()
+                products = self.db.query(Product).filter(Product.id.in_([cp.product_id for cp in cart_products])).all()
+                
+                user_cart_products: List[UserCartProduct] = []
+                for product in products:
+                    user_cart_product = UserCartProduct(
+                        id=product.id,
+                        title=product.title,
+                        description=product.description,
+                        price=product.price,
+                        total_quantity=product.quantity,
+                        category=product.category_id,
+                        subcategory=product.subcategory_id,
+                        quantity_in_cart=next((cp.quantity for cp in cart_products if cp.product_id == product.id), 0)
+                    )
+                    user_cart_products.append(user_cart_product)
+                
+                return CartViewResponse(
+                    products=user_cart_products,
+                    status_code=status.HTTP_200_OK,
+                    msg=f"Cart retrieved successfully"
+                )
+            else:
+                return GenericResponse(
+                    status_code=status.HTTP_204_NO_CONTENT,
+                    msg=f"No active cart"
+                )
         except GenericException:
             raise
         except Exception as e:

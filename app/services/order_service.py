@@ -1,7 +1,7 @@
 from app.models.cart_products import CartProducts
 from app.models.product import Product
 from app.models.receipt import Receipt
-from app.schemas.order import OrderUpdateRequest, OrderUpdateResponse
+from app.schemas.order import OrderConfirmResponse, OrderShippedRequest, OrderShippedResponse, OrderDeliveredRequest, OrderDeliveredResponse
 from app.schemas.generic import GenericResponse
 from app.models.order import Order, OrderStatus
 from app.models.user import User, UserRole
@@ -171,42 +171,27 @@ class OrderService:
             self.db.rollback()
             raise GenericException(reason=str(e))
         
-    def update(self, req: OrderUpdateRequest, user_id: int):
+    def confirm(self, user_id: int):
         try:
             user = self.db.query(User).filter(User.id == user_id).first()
-            if req.status == OrderStatus.CONFIRMED:
-                order = self.db.query(Order).filter(Order.user_id == user_id).first()
-                order.status = req.status
-                product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
-                stock_check_result, product_stock_reason = self.__check_product_stock(product_ids_in_cart)
-                if stock_check_result == False:
-                    raise GenericException(
-                        reason=product_stock_reason
-                    )
-                else:
-                    user.active_cart_id = None
-                    self.__update_product_stock(product_ids_in_cart)
-                    receipt = self.__generate_receipt(product_ids_in_cart, order)
-                    send_email_status, reason = self.__send_email(order.status, receipt)
-                    self.db.commit()
-                    return OrderUpdateResponse(
-                        id=receipt.id,
-                        subtotal=receipt.subtotal,
-                        tax=receipt.tax,
-                        shipping_fee=receipt.shipping_fee,
-                        grand_total=receipt.grand_total,
-                        products=self.__get_products_price_breakdown(product_ids_in_cart),
-                        order=order.status,
-                        status_code=status.HTTP_200_OK,
-                        msg=f"Order with status: {order.status} updated successfully and email sent status: {send_email_status}. Reason: {reason}",
-                    )
-            elif req.status in [OrderStatus.SHIPPED, OrderStatus.DELIVERED] and user.roles == UserRole.ADMIN:
-                order = self.db.query(Order).filter(Order.user_id == req.user_id and Order.cart_id == req.cart_id).first()
-                product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
-                receipt = self.db.query(Receipt).filter(Receipt.order_id == order.id).first()
+            if user.active_cart_id == None:
+                raise GenericException(reason="No active cart to confirm order")
+            
+            order = self.db.query(Order).filter(Order.cart_id == user.active_cart_id).first()
+            order.status = OrderStatus.CONFIRMED
+            product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
+            stock_check_result, product_stock_reason = self.__check_product_stock(product_ids_in_cart)
+            if stock_check_result == False:
+                raise GenericException(
+                    reason=product_stock_reason
+                )
+            else:
+                user.active_cart_id = None
+                self.__update_product_stock(product_ids_in_cart)
+                receipt = self.__generate_receipt(product_ids_in_cart, order)
                 send_email_status, reason = self.__send_email(order.status, receipt)
                 self.db.commit()
-                return OrderUpdateResponse(
+                return OrderConfirmResponse(
                     id=receipt.id,
                     subtotal=receipt.subtotal,
                     tax=receipt.tax,
@@ -217,10 +202,66 @@ class OrderService:
                     status_code=status.HTTP_200_OK,
                     msg=f"Order with status: {order.status} updated successfully and email sent status: {send_email_status}. Reason: {reason}",
                 )
-            else:
-                raise GenericException(
-                    reason=f"Unable to update order status because status not recognized"
-                )
+        except GenericException:
+            self.db.rollback()
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
+
+    def shipped(self, req: OrderShippedRequest, user_id: int):
+        try:
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if user.roles != UserRole.ADMIN:
+                raise GenericException(reason="User not authorized to update order status")
+            
+            order = self.db.query(Order).filter(Order.user_id == req.user_id and Order.cart_id == req.cart_id).first()
+            order.status = OrderStatus.SHIPPED
+            product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
+            receipt = self.db.query(Receipt).filter(Receipt.order_id == order.id).first()
+            send_email_status, reason = self.__send_email(order.status, receipt)
+            self.db.commit()
+            return OrderShippedResponse(
+                id=receipt.id,
+                subtotal=receipt.subtotal,
+                tax=receipt.tax,
+                shipping_fee=receipt.shipping_fee,
+                grand_total=receipt.grand_total,
+                products=self.__get_products_price_breakdown(product_ids_in_cart),
+                order=order.status,
+                status_code=status.HTTP_200_OK,
+                msg=f"Order with status: {order.status} updated successfully and email sent status: {send_email_status}. Reason: {reason}",
+            )
+        except GenericException:
+            self.db.rollback()
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
+        
+    def delivered(self, req: OrderDeliveredRequest, user_id: int):
+        try:
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if user.roles != UserRole.ADMIN:
+                raise GenericException(reason="User not authorized to update order status")
+            
+            order = self.db.query(Order).filter(Order.user_id == req.user_id and Order.cart_id == req.cart_id).first()
+            order.status = OrderStatus.DELIVERED
+            product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
+            receipt = self.db.query(Receipt).filter(Receipt.order_id == order.id).first()
+            send_email_status, reason = self.__send_email(order.status, receipt)
+            self.db.commit()
+            return OrderDeliveredResponse(
+                id=receipt.id,
+                subtotal=receipt.subtotal,
+                tax=receipt.tax,
+                shipping_fee=receipt.shipping_fee,
+                grand_total=receipt.grand_total,
+                products=self.__get_products_price_breakdown(product_ids_in_cart),
+                order=order.status,
+                status_code=status.HTTP_200_OK,
+                msg=f"Order with status: {order.status} updated successfully and email sent status: {send_email_status}. Reason: {reason}",
+            )
         except GenericException:
             self.db.rollback()
             raise

@@ -41,5 +41,5 @@ def setup_exception_handlers(app: FastAPI):
         log_exception(exc)
         return JSONResponse(
             status_code=422,
-            content={"error": exc.errors()}
+            content={"error": [error['msg'] for error in exc.errors()]}
         )
