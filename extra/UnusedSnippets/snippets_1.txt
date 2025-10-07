@@ -1,0 +1,5 @@
+def __save_image(self, image: UploadFile, image_id: str):
+    file_path = os.path.join(settings.PRODUCT_IMAGES_DIR, f"{image_id}.png")
+    with open(os.path.join(settings.ROOT_FOLDER, file_path), "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+    return os.path.join(settings.URL, file_path)

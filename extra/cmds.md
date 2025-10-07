@@ -11,3 +11,4 @@
 - pip install passlib[argon2]
 - pip install python-slugify
 - pip install rapidfuzz
+- pip3 install cloudinary

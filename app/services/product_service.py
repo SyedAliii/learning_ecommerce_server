@@ -16,16 +16,22 @@ from app.core.exceptions.exception_main import GenericException
 from app.core.config import settings
 import os
 import app.utils.str_helper as str_helper
+from app.integrations.cloudinary_service import upload_image
+from app.utils.str_helper import generate_unique_uuid
 
 class ProductService:
     def __init__(self, db: Session):
         self.db = db
 
-    def __save_image(self, image: UploadFile, product_id: str):
-        file_path = os.path.join(settings.PRODUCT_IMAGES_DIR, str(image.filename))
-        with open(os.path.join(settings.ROOT_FOLDER, file_path), "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
-        return os.path.join(settings.URL, file_path)
+    def __upload_image_to_cloudinary(self, image: UploadFile, image_id: str):
+        try:
+            success, result = upload_image(image, image_id)
+            if success:
+                return True, result
+            else:
+                return False, f"Error uploading image against id: {image_id} : {result}"
+        except Exception as e:
+            return False, f"Error uploading image against id: {image_id} : {str(e)}"
 
     def add(self, product_add_request: ProductAddRequest, user_id: int):
         try:
@@ -53,9 +59,15 @@ class ProductService:
             new_product.url_slug = str_helper.generate_product_slug(new_product.category_id, new_product.subcategory_id,
                 new_product.title, new_product.id)
 
+            upload_errors : List[str] = []
+
             for image in product_add_request.images:
                 new_product_image = ProductImage()
-                new_product_image.url = self.__save_image(image, new_product.id)
+                unique_id = str_helper.generate_unique_uuid()
+                upload_status, url = self.__upload_image_to_cloudinary(image, unique_id)
+                if not upload_status:
+                    upload_errors.append(f"Error uploading product: {new_product.id} with image id: {unique_id}: {url}")
+                new_product_image.url = url
                 new_product_image.product_id = new_product.id
                 self.db.add(new_product_image)
             
@@ -63,9 +75,11 @@ class ProductService:
             self.db.commit()
             self.db.refresh(new_product)
             
+            upload_errors_str = "; ".join(upload_errors)
+
             return GenericResponse(
                 status_code=status.HTTP_201_CREATED,
-                msg=f"Product successfully added"
+                msg = f"Product successfully added. Failed Images Errors: {upload_errors_str} " if len(upload_errors) > 0 else "Product successfully added.",
             )
         except GenericException:
             raise

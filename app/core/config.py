@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     ROOT_FOLDER: str = "app/"
     URL : str = "http://localhost:8000/"
     FUZZY_SEARCH_THRESHOLD: int = 60
+    CLOUDINARY_CLOUD_NAME: str
+    CLOUDINARY_API_KEY: str
+    CLOUDINARY_API_SECRET: str
 
     class Config:
         env_file = ".env"
