@@ -1,9 +1,10 @@
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from fastapi import File, Form, UploadFile
 
 class ProductAddRequest(BaseModel):
+    # model_config = ConfigDict(extra='forbid')
     title: str
     description: str
     price: int

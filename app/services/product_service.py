@@ -36,10 +36,10 @@ class ProductService:
             if user.roles != UserRole.ADMIN:
                 raise GenericException(reason="User not authorized to add products")
 
-            if not self.db.query(Category).filter(Category.id == product_add_request.category).first():
-                raise GenericException(reason=f"Category not found with id: {product_add_request.category}")
-            if not self.db.query(Subcategory).filter(Subcategory.id == product_add_request.subcategory).first():
-                raise GenericException(reason=f"Subcategory not found with id: {product_add_request.subcategory}")
+            if not self.db.query(Category).filter(Category.id == product_add_request.category_id).first():
+                raise GenericException(reason=f"Category not found with id: {product_add_request.category_id}")
+            if not self.db.query(Subcategory).filter(Subcategory.id == product_add_request.subcategory_id).first():
+                raise GenericException(reason=f"Subcategory not found with id: {product_add_request.subcategory_id}")
 
             new_product = Product()
             new_product.id = str_helper.generate_unique_uuid()
@@ -47,8 +47,8 @@ class ProductService:
             new_product.description = product_add_request.description
             new_product.price = product_add_request.price
             new_product.quantity = product_add_request.quantity
-            new_product.category_id = product_add_request.category
-            new_product.subcategory_id = product_add_request.subcategory
+            new_product.category_id = product_add_request.category_id
+            new_product.subcategory_id = product_add_request.subcategory_id
             new_product.status = ProductStatus.AVAILABLE
             new_product.url_slug = str_helper.generate_product_slug(new_product.category_id, new_product.subcategory_id,
                 new_product.title, new_product.id)
@@ -71,6 +71,7 @@ class ProductService:
             raise
         except Exception as e:
             self.db.rollback()
+            # self.backtrace
             raise GenericException(reason=str(e))
 
     def get_all(self):

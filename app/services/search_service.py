@@ -1,9 +1,14 @@
+from typing import List
+from app.models.product_image import ProductImage
 from app.schemas.generic import GenericResponse
+from app.schemas.product import ProductBaseModel
+from app.schemas.search import SearchResponse
 from app.models.product import Product, ProductStatus
 from sqlalchemy.orm import Session
 from app.core.exceptions.exception_main import GenericException
 from app.core.config import settings
 from rapidfuzz import fuzz, process
+from fastapi import status
 
 class SearchService:
     def __init__(self, db: Session):
@@ -18,23 +23,28 @@ class SearchService:
 
     def search(self, query: str):
         try:
-            self.__fuzzy_search(query)
-            return
-            # if not query:
-            #     raise GenericException(reason="Search query is empty")
+            if not query:
+                raise GenericException(reason="Search query is empty")
 
-            # products = self.db.query(Product).filter(Product.title.ilike(f"%{query}%")).all()
-            # if not products:
-            #     return GenericResponse(
-            #         status_code=status.HTTP_204_NO_CONTENT,
-            #         msg="No products found"
-            #     )
+            products = self.db.query(Product).filter(Product.title.like(f"%{query}%")).all()
+            if not products:
+                return GenericResponse(
+                    status_code=status.HTTP_204_NO_CONTENT,
+                    msg="No products found"
+                )
+            
+            product_list = []
+            for product in products:
+                product_data = product.__dict__
+                product_images : List[ProductImage] = product.images
+                product_model = ProductBaseModel(**product_data, product_img_urls=[img.url for img in product_images])
+                product_list.append(product_model)
 
-            # return GenericResponse(
-            #     status_code=status.HTTP_200_OK,
-            #     msg="Products found",
-            #     data=products
-            # )
+            return SearchResponse(
+                status_code=status.HTTP_200_OK,
+                msg="Products found",
+                products=product_list
+            )
         except GenericException:
             raise
         except Exception as e:
