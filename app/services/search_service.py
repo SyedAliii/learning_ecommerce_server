@@ -10,6 +10,8 @@ from app.core.config import settings
 from rapidfuzz import fuzz, process
 from fastapi import status
 
+from app.utils import str_helper
+
 class SearchService:
     def __init__(self, db: Session):
         self.db = db
@@ -37,7 +39,8 @@ class SearchService:
             for product in products:
                 product_data = product.__dict__
                 product_images : List[ProductImage] = product.images
-                product_model = ProductBaseModel(**product_data, product_img_urls=[img.url for img in product_images])
+                url_slug = f"{str_helper.slugify(product.category_id)}/{str_helper.slugify(product.subcategory_id)}/{str_helper.slugify(product.title)}/{product.id}"
+                product_model = ProductBaseModel(**product_data, url_slug=url_slug, product_img_urls=[img.url for img in product_images])
                 product_list.append(product_model)
 
             return SearchResponse(

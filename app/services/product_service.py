@@ -56,8 +56,6 @@ class ProductService:
             new_product.category_id = product_add_request.category_id
             new_product.subcategory_id = product_add_request.subcategory_id
             new_product.status = ProductStatus.AVAILABLE
-            new_product.url_slug = str_helper.generate_product_slug(new_product.category_id, new_product.subcategory_id,
-                new_product.title, new_product.id)
 
             upload_errors : List[str] = []
 
@@ -95,7 +93,8 @@ class ProductService:
             for product in products:
                 product_data = product.__dict__
                 product_images : List[ProductImage] = product.images
-                product_model = ProductBaseModel(**product_data, product_img_urls=[img.url for img in product_images])
+                url_slug = f"{str_helper.slugify(product.category_id)}/{str_helper.slugify(product.subcategory_id)}/{str_helper.slugify(product.title)}/{product.id}"
+                product_model = ProductBaseModel(**product_data, url_slug=url_slug, product_img_urls=[img.url for img in product_images])
                 product_list.append(product_model)
 
             return AllProductsGetResponse(products=product_list)
@@ -104,20 +103,20 @@ class ProductService:
         except Exception as e:
             raise GenericException(reason=str(e))
         
-    def get_single(self, get_req: SingleProductGetRequest):
+    def get_single(self, req: SingleProductGetRequest):
         try:
-            url_slug = f"{get_req.category_id}/{get_req.subcategory_id}/{get_req.title}/{get_req.id}"
-            product = self.db.query(Product).filter(Product.url_slug == url_slug and Product.status == ProductStatus.AVAILABLE).first()
+            product = self.db.query(Product).filter(Product.id == req.id and Product.status == ProductStatus.AVAILABLE).first()
             if not product:
-                raise GenericException(reason=f"Product not found with id: {get_req.id}")
+                raise GenericException(reason=f"Product not found with id: {req.id}")
             
+            url_slug = f"{str_helper.slugify(req.category_id)}/{str_helper.slugify(req.subcategory_id)}/{str_helper.slugify(req.title)}/{req.id}"
             product_images : List[ProductImage] = product.images
-            return SingleProductGetResponse(product=ProductBaseModel(**product.__dict__,
+            return SingleProductGetResponse(product=ProductBaseModel(**product.__dict__, url_slug=url_slug,
                         product_img_urls=[img.url for img in product_images]))
         except GenericException:
             raise
         except Exception as e:
-            raise GenericException(reason=f"Error getting product with id {get_req.id}: {str(e)}")
+            raise GenericException(reason=f"Error getting product with id {req.id}: {str(e)}")
 
     def update(self, product_update_request: ProductUpdateRequest, user_id: int):
         try:

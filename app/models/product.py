@@ -18,7 +18,6 @@ class Product(Base):
     category_id = Column(String, ForeignKey("categories.id"), nullable=False)
     subcategory_id = Column(String, ForeignKey("subcategories.id"), nullable=False)
     status = Column(AlchemyEnum(ProductStatus), nullable=False)
-    url_slug = Column(String, unique=True, nullable=False)
 
     images = relationship("ProductImage", back_populates="product")
     category = relationship("Category", back_populates="products")
