@@ -12,3 +12,5 @@
 - pip install python-slugify
 - pip install rapidfuzz
 - pip3 install cloudinary
+- pip install celery
+- pip install redis
