@@ -13,7 +13,7 @@ origins = [
     "http://localhost:8080",  # In case your dev server runs on 8080
     "http://127.0.0.1:5173",  # Some browsers resolve localhost to 127.0.0.1
 ]
-
+ 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,        # Allowed origins
