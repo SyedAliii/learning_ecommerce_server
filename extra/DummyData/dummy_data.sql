@@ -48,16 +48,17 @@ INSERT INTO products (id, title, description, price, quantity, category_id, subc
 
 
 INSERT INTO product_images (url, product_id) VALUES
-('https://images.unsplash.com/photo-1690819488480-iphone15pro', 'prod001'),
-('https://images.unsplash.com/photo-1587202372775-dellxps13', 'prod002'),
-('https://images.unsplash.com/photo-1600180758890-mens-leather-jacket', 'prod003'),
-('https://images.unsplash.com/photo-1512436991641-6745cdb1723f', 'prod004'),
-('https://images.unsplash.com/photo-1586201375761-83865001e31b', 'prod005'),
-('https://images.unsplash.com/photo-1582582494700-7b5f98a86d19', 'prod006'),
-('https://images.unsplash.com/photo-1571731956672-c9a0c38b8b5b', 'prod007'),
-('https://images.unsplash.com/photo-1507504031003-b4179c8d59a1', 'prod008'),
-('https://images.unsplash.com/photo-1532012197267-da84d127e765', 'prod009'),
-('https://images.unsplash.com/photo-1553729784-e91953dec042', 'prod010');
+  ('https://images.unsplash.com/photo-1690819488480?auto=format&fit=crop&w=800', 'prod001'),
+  ('https://images.unsplash.com/photo-1567521463850-4939134bcd4a?auto=format&fit=crop&w=800', 'prod002'),
+  ('https://plus.unsplash.com/premium_photo-1661313817350-1fa759c43a3b?auto=format&fit=crop&w=800', 'prod003'),
+  ('https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800', 'prod004'),
+  ('https://images.unsplash.com/photo-1586201375761-83865001e31b?auto=format&fit=crop&w=800', 'prod005'),
+  ('https://images.unsplash.com/photo-1582582494700-7b5f98a86d19?auto=format&fit=crop&w=800', 'prod006'),
+  ('https://images.unsplash.com/photo-1571731956672-c9a0c38b8b5b?auto=format&fit=crop&w=800', 'prod007'),
+  ('https://images.unsplash.com/photo-1507504031003-b4179c8d59a1?auto=format&fit=crop&w=800', 'prod008'),
+  ('https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=800', 'prod009'),
+  ('https://images.unsplash.com/photo-1553729784-e91953dec042?auto=format&fit=crop&w=800', 'prod010');
+
 
 DROP TABLE products, product_images, categories, subcategories, categories_subcategories CASCADE;
 
