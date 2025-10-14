@@ -15,8 +15,8 @@ class Product(Base):
     description = Column(String, nullable=False)
     price = Column(Integer, nullable=False)
     quantity = Column(Integer, nullable=False)
-    category_id = Column(String, ForeignKey("categories.id"), nullable=False)
-    subcategory_id = Column(String, ForeignKey("subcategories.id"), nullable=False)
+    category_id = Column(String, ForeignKey("categories.id", onupdate="CASCADE"), nullable=False )
+    subcategory_id = Column(String, ForeignKey("subcategories.id", onupdate="CASCADE"), nullable=False)
     status = Column(AlchemyEnum(ProductStatus), nullable=False)
 
     images = relationship("ProductImage", back_populates="product")

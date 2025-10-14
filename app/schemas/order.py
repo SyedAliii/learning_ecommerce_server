@@ -48,3 +48,18 @@ class OrderDeliveredResponse(BaseModel):
     order: OrderStatus
     status_code: int
     msg: str
+
+class OrderBaseModel(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    user_email: str
+    cart_id: int
+    total_items: int
+    total_price: int
+    status: OrderStatus
+
+class GetAllOrdersResponse(BaseModel):
+    orders: List[OrderBaseModel]
+    status_code: int
+    msg: str

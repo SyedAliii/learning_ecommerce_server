@@ -15,12 +15,12 @@ class CartAddRequest(BaseModel):
 
 class CartRemoveRequest(BaseModel):
     product_id: str
-    quantity: Optional[int] = 1
+    quantity: Optional[int] = None
 
     @field_validator("quantity")
     def validate_quantity(cls, value):
         if value is not None and value <= 0:
-            raise ValueError("quantity must be greater than 0")
+            raise ValueError("quantity must be greater than or equal to 0")
         return value
 
 class CartViewResponse(BaseModel):

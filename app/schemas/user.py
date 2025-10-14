@@ -12,6 +12,12 @@ class UserCreateRequest(BaseModel):
     city: str
     country: str
 
+class UserCreateResponse(BaseModel):
+    status_code: int
+    msg: str
+    id : int
+    email : str
+
 class UserAuthenticateRequest(BaseModel):
     email: EmailStr
     password: str
@@ -42,9 +48,10 @@ class UserCartProduct(BaseModel):
 
 class UserDataResponse(BaseModel):
     access_token: str
+    id: int
     name: str
     email: EmailStr
-    roles: UserRole
+    role: UserRole
     cart_products: List[UserCartProduct]
     status_code: int
     msg: str

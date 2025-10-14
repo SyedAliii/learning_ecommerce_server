@@ -28,7 +28,7 @@ class SearchService:
             if not query:
                 raise GenericException(reason="Search query is empty")
 
-            products = self.db.query(Product).filter(Product.title.like(f"%{query}%")).all()
+            products = self.db.query(Product).filter(Product.title.like(f"%{query}%")).filter(Product.status == ProductStatus.AVAILABLE).all()
             if not products:
                 return GenericResponse(
                     status_code=status.HTTP_204_NO_CONTENT,

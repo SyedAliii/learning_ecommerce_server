@@ -2,7 +2,7 @@ from typing import List
 from app.models.cart import Cart
 from app.models.cart_products import CartProducts
 from app.models.product import Product
-from app.schemas.user import UserCreateRequest, UserAuthenticateRequest, UserAuthenticateResponse, UserResponse, UserDataResponse, UserCartProduct
+from app.schemas.user import UserCreateRequest, UserCreateResponse, UserAuthenticateRequest, UserAuthenticateResponse, UserResponse, UserDataResponse, UserCartProduct
 from app.schemas.generic import GenericResponse
 from app.schemas.product import ProductBaseModel
 from app.models.user import User, UserRole
@@ -84,9 +84,11 @@ class UserService:
             self.db.commit()
             self.db.refresh(new_user)
 
-            return GenericResponse(
+            return UserCreateResponse(
                 status_code=status.HTTP_201_CREATED,
-                msg=f"User Id: {new_user.id} with role User successfully created"
+                msg=f"User Id: {new_user.id} with role User successfully created",
+                id=new_user.id,
+                email=new_user.email
             )
         except Exception as e:
             self.db.rollback()
@@ -136,9 +138,10 @@ class UserService:
             product_ids_in_cart = self.__get_product_ids_in_cart(user.active_cart_id) if user.active_cart_id else []
             return UserDataResponse(
                 access_token=access_token,
+                id=user.id,
                 name=user.name,
                 email=user.email,
-                roles=user.roles,
+                role=user.roles,
                 cart_products=self.__get_user_cart_products(product_ids_in_cart),
                 status_code=status.HTTP_200_OK,
                 msg=f"User Successfully Logged In"

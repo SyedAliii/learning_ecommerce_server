@@ -6,9 +6,9 @@ import enum
 class CategorySubcategory(Base):
     __tablename__ = "categories_subcategories"
 
-    id = Column(String, primary_key=True)
-    category_id = Column(String, ForeignKey("categories.id"), nullable=False)
-    subcategory_id = Column(String, ForeignKey("subcategories.id"), nullable=False)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    category_id = Column(String, ForeignKey("categories.id", onupdate="CASCADE"), nullable=False)
+    subcategory_id = Column(String, ForeignKey("subcategories.id", onupdate="CASCADE"), nullable=False)
 
     categories = relationship("Category", back_populates="categories_subcategories")
     subcategories = relationship("Subcategory", back_populates="categories_subcategories")

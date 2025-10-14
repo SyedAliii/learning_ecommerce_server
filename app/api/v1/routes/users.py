@@ -19,10 +19,16 @@ async def create_admin(user_create_request: UserCreateRequest, db: Session = Dep
     user_service = UserService(db)
     return user_service.create_admin(user_create_request)
 
-@router.post("/create_user", response_model=GenericResponse)
+@router.post("/create_user", response_model=UserDataResponse)
 async def create_user(user_create_request: UserCreateRequest, db: Session = Depends(get_db)):
     user_service = UserService(db)
-    return user_service.create_user(user_create_request)
+    response = user_service.create_user(user_create_request)
+    if not response.status_code == 201:
+        return response
+    else:
+        token = create_access_token(response.email, response.id)
+        user_data_response = user_service.get_user_data(token, response.id)
+        return user_data_response
 
 @router.post("/login", response_model=UserDataResponse)
 async def login(form_Data: OAuth2PasswordRequestForm = Depends(),

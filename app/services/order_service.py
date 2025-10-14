@@ -1,7 +1,7 @@
 from app.models.cart_products import CartProducts
 from app.models.product import Product
 from app.models.receipt import Receipt
-from app.schemas.order import OrderConfirmResponse, OrderShippedRequest, OrderShippedResponse, OrderDeliveredRequest, OrderDeliveredResponse
+from app.schemas.order import GetAllOrdersResponse, OrderBaseModel, OrderStatus, OrderBaseModel, OrderConfirmResponse, OrderShippedRequest, OrderShippedResponse, OrderDeliveredRequest, OrderDeliveredResponse
 from app.schemas.generic import GenericResponse
 from app.models.order import Order, OrderStatus
 from app.models.user import User, UserRole
@@ -262,6 +262,51 @@ class OrderService:
                 order=order.status,
                 status_code=status.HTTP_200_OK,
                 msg=f"Order with status: {order.status} updated successfully and email sent status: {send_email_status}. Reason: {reason}",
+            )
+        except GenericException:
+            self.db.rollback()
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
+
+    def get_all(self, user_id: int):
+        try:
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if user.roles != UserRole.ADMIN:
+                raise GenericException(reason="User not authorized to get all orders")
+            
+            orders = self.db.query(Order).all()
+            if not orders:
+                return GetAllOrdersResponse(
+                    orders=[],
+                    status_code=status.HTTP_200_OK,
+                    msg="No Orders Found"
+                )
+            orders_list = []
+            for order in orders:
+                user = self.db.query(User).filter(User.id == order.user_id).first()
+                if not user:
+                    continue
+                product_ids_in_cart = self.__get_product_ids_in_cart(order.cart_id)
+                quantity = sum([item.quantity for item in product_ids_in_cart])
+                products = self.db.query(Product).filter(Product.id.in_([item.product_id for item in product_ids_in_cart])).all()
+                orders_list.append(
+                    OrderBaseModel(
+                        id=order.id,
+                        user_id=order.user_id,
+                        username=user.name,
+                        user_email=user.email,
+                        cart_id=order.cart_id,
+                        total_items=quantity,
+                        total_price=sum([product.price * item.quantity for product in products for item in product_ids_in_cart if product.id == item.product_id]),
+                        status=order.status
+                    )
+                )
+            return GetAllOrdersResponse(
+                orders=orders_list,
+                status_code=status.HTTP_200_OK,
+                msg="All Orders retrieved successfully"
             )
         except GenericException:
             self.db.rollback()

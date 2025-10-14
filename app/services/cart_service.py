@@ -38,7 +38,7 @@ class CartService:
         self.db.commit()
         return GenericResponse(
                 status_code=status.HTTP_200_OK,
-                msg=f"Product quantity updated in cart"
+                msg=f"Product updated in cart"
             )
     
     def __add_new_product_to_cart_products(self, cart_id: int, product_id: str, quantity: int):
@@ -68,15 +68,15 @@ class CartService:
         try:
             user = self.db.query(User).filter(User.id == user_id).first()
             if user.active_cart_id != None:
-                    if self.__check_cart_exists_in_cart_products(user.active_cart_id):
-                        cart_product = self.__check_product_exists_in_cart_products(user.active_cart_id, 
-                                                                                  cart_add_request.product_id)
-                        if cart_product:
-                            return self.__update_only_quantity_in_cart_products(cart_product, cart_add_request.quantity, False)
-                        else:
-                            return self.__add_new_product_to_cart_products(user.active_cart_id, cart_add_request.product_id, cart_add_request.quantity)
+                if self.__check_cart_exists_in_cart_products(user.active_cart_id):
+                    cart_product = self.__check_product_exists_in_cart_products(user.active_cart_id, 
+                                                                                cart_add_request.product_id)
+                    if cart_product:
+                        return self.__update_only_quantity_in_cart_products(cart_product, cart_add_request.quantity, False)
                     else:
                         return self.__add_new_product_to_cart_products(user.active_cart_id, cart_add_request.product_id, cart_add_request.quantity)
+                else:
+                    return self.__add_new_product_to_cart_products(user.active_cart_id, cart_add_request.product_id, cart_add_request.quantity)
             else:
                 user.active_cart_id = self.__add_new_cart(user.id)
                 return self.__add_new_product_to_cart_products(user.active_cart_id, cart_add_request.product_id, cart_add_request.quantity)
@@ -94,6 +94,8 @@ class CartService:
                     cart_product = self.__check_product_exists_in_cart_products(user.active_cart_id, 
                                                                                 req.product_id)
                     if cart_product:
+                        if req.quantity == None:
+                            return self.__update_only_quantity_in_cart_products(cart_product, cart_product.quantity, True)
                         if cart_product.quantity > 1:
                             return self.__update_only_quantity_in_cart_products(cart_product, req.quantity, True)
                         else:

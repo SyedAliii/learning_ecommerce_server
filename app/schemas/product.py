@@ -55,7 +55,6 @@ class ProductUpdateRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     price: Optional[int] = None
-    discount: Optional[int] = None
     quantity: Optional[int] = None
     category_id: Optional[str] = None
     subcategory_id: Optional[str] = None
@@ -65,3 +64,22 @@ class GetAllCategoriesSubcategoriesResponse(BaseModel):
 
 class GetAllSubcategoriesResponse(BaseModel):
     subcategories: List[str]
+
+class AddNewCategoryRequest(BaseModel):
+    category: str
+    subcategories: List[str]
+
+class RenameCategoryRequest(BaseModel):
+    category: str
+    new_name: str
+
+class RenameSubcategoryRequest(BaseModel):
+    subcategory: str
+    new_name: str
+
+class EditCategoryRequest(BaseModel):
+    category: str
+    subcategories: List[str]
+    
+class DeleteCategoryRequest(BaseModel):
+    category: str

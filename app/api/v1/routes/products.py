@@ -1,6 +1,6 @@
 import shutil
 from typing import List
-from app.schemas.product import (ProductAddRequest, AllProductsGetResponse, SingleProductGetRequest,
+from app.schemas.product import (AddNewCategoryRequest, DeleteCategoryRequest, EditCategoryRequest, ProductAddRequest, AllProductsGetResponse, RenameCategoryRequest, RenameSubcategoryRequest, SingleProductGetRequest,
     SingleProductGetResponse, ProductUpdateRequest, GetAllCategoriesSubcategoriesResponse, GetAllSubcategoriesResponse)
 from app.schemas.generic import GenericResponse
 from fastapi import APIRouter, Depends, File, Form, UploadFile
@@ -40,6 +40,31 @@ async def delete_product(product_id: str, user_id: int = Depends(get_current_use
                           db: Session = Depends(get_db)):
     product_service = ProductService(db)
     return product_service.delete(product_id=product_id, user_id=user_id)
+
+@router.post("/add_new_category", response_model=GenericResponse)
+async def add_new_category(add_new_category_request: AddNewCategoryRequest, db: Session = Depends(get_db)):
+    product_service = ProductService(db)
+    return product_service.add_new_category(add_new_category_request)
+
+@router.post("/rename_category", response_model=GenericResponse)
+async def rename_category(rename_category_request: RenameCategoryRequest, db: Session = Depends(get_db)):
+    product_service = ProductService(db)
+    return product_service.rename_category(rename_category_request)
+
+@router.post("/rename_subcategory", response_model=GenericResponse)
+async def rename_subcategory(rename_subcategory_request: RenameSubcategoryRequest, db: Session = Depends(get_db)):
+    product_service = ProductService(db)
+    return product_service.rename_subcategory(rename_subcategory_request)
+
+@router.post("/edit_category", response_model=GenericResponse)
+async def edit_category(edit_category_request: EditCategoryRequest, db: Session = Depends(get_db)):
+    product_service = ProductService(db)
+    return product_service.edit_category(edit_category_request)
+
+@router.post("/delete_category", response_model=GenericResponse)
+async def delete_category(delete_category_request: DeleteCategoryRequest, db: Session = Depends(get_db)):
+    product_service = ProductService(db)
+    return product_service.delete_category(delete_category_request)
 
 @router.get("/get_all_categories_subcategories", response_model=GetAllCategoriesSubcategoriesResponse)
 async def get_all_categories_subcategories(db: Session = Depends(get_db)):

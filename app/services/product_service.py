@@ -5,7 +5,7 @@ from app.models.categories_subcategories import CategorySubcategory
 from app.models.product_image import ProductImage
 from app.models.category import Category
 from app.models.subcategory import Subcategory
-from app.schemas.product import (AllProductsGetResponse, ProductAddRequest, ProductBaseModel, SingleProductGetRequest, SingleProductGetResponse,
+from app.schemas.product import (AddNewCategoryRequest, AllProductsGetResponse, DeleteCategoryRequest, EditCategoryRequest, ProductAddRequest, ProductBaseModel, RenameCategoryRequest, RenameCategoryRequest, RenameSubcategoryRequest, SingleProductGetRequest, SingleProductGetResponse,
     ProductUpdateRequest, GetAllCategoriesSubcategoriesResponse, GetAllSubcategoriesResponse)
 from app.schemas.generic import GenericResponse
 from app.models.product import Product, ProductStatus
@@ -32,6 +32,21 @@ class ProductService:
                 return False, f"Error uploading image against id: {image_id} : {result}"
         except Exception as e:
             return False, f"Error uploading image against id: {image_id} : {str(e)}"
+
+    def __check_if_any_product_belongs_to_category(self, category_id: str) -> Product:
+        product = self.db.query(Product).filter(Product.category_id == category_id).first()
+        return product
+
+    def __check_if_any_product_belongs_to_subcategory(self, subcategory_id: str) -> Product:
+        product = self.db.query(Product).filter(Product.subcategory_id == subcategory_id).first()
+        return product
+
+    def __check_if_subcategory_belongs_to_any_other_category(self, category_id: str, subcategory_id: str) -> bool:
+        cat_subcat = self.db.query(CategorySubcategory).filter(
+            (CategorySubcategory.category_id != category_id) & 
+            (CategorySubcategory.subcategory_id == subcategory_id)
+        ).first()
+        return cat_subcat is not None
 
     def add(self, product_add_request: ProductAddRequest, user_id: int):
         try:
@@ -174,6 +189,162 @@ class ProductService:
             self.db.rollback()
             raise GenericException(reason=str(e))
         
+    def add_new_category(self, req: AddNewCategoryRequest):
+        try:
+            if self.db.query(Category).filter(Category.id == req.category).first():
+                raise GenericException(reason=f"Category already exists with id: {req.category}")
+            new_category = Category()
+            new_category.id = req.category
+            self.db.add(new_category)
+
+            req.subcategories = list(set(req.subcategories))
+            for subcat in req.subcategories:
+                if not self.db.query(Subcategory).filter(Subcategory.id == subcat).first():
+                    new_sub_category = Subcategory()
+                    new_sub_category.id = subcat
+                    self.db.add(new_sub_category)
+                category_subcategory = CategorySubcategory()
+                category_subcategory.category_id = req.category
+                category_subcategory.subcategory_id = subcat
+                self.db.add(category_subcategory)
+
+            self.db.commit()
+            return GenericResponse(
+                status_code=status.HTTP_201_CREATED,
+                msg=f"Category successfully added with id: {new_category.id}"
+            )
+        except GenericException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
+        
+    def rename_category(self, req: RenameCategoryRequest):
+        try:
+            category = self.db.query(Category).filter(Category.id == req.category).first()
+            if not category:
+                raise GenericException(reason=f"Category not found with id: {req.category}")
+            if self.db.query(Category).filter(Category.id == req.new_name).first():
+                raise GenericException(reason=f"Category already exists with id: {req.new_name}")
+
+            category.id = req.new_name
+            self.db.commit()
+
+            return GenericResponse(
+                status_code=status.HTTP_200_OK,
+                msg=f"Category successfully renamed to: {req.new_name}"
+            )
+        except GenericException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
+        
+    def rename_subcategory(self, req: RenameSubcategoryRequest):
+        try:
+            subcategory = self.db.query(Subcategory).filter(Subcategory.id == req.subcategory).first()
+            if not subcategory:
+                raise GenericException(reason=f"Subcategory not found with id: {req.subcategory}")
+            if self.db.query(Subcategory).filter(Subcategory.id == req.new_name).first():
+                raise GenericException(reason=f"Subcategory already exists with id: {req.new_name}")
+            subcategory.id = req.new_name
+            self.db.commit()
+
+            return GenericResponse(
+                status_code=status.HTTP_200_OK,
+                msg=f"Subcategory successfully renamed to: {req.new_name}"
+            )
+        except GenericException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
+    
+    def edit_category(self, req: EditCategoryRequest):
+        try:
+            category = self.db.query(Category).filter(Category.id == req.category).first()
+            if not category:
+                raise GenericException(reason=f"Category not found with id: {req.category}")
+
+            existing_subcategories = self.db.query(CategorySubcategory).filter(CategorySubcategory.category_id == req.category).all()
+            existing_subcat_ids = {subcat.subcategory_id for subcat in existing_subcategories}
+            new_subcat_ids = set(req.subcategories)
+            to_add = new_subcat_ids - existing_subcat_ids
+            to_remove = existing_subcat_ids - new_subcat_ids
+            for subcat_id in to_add:
+                if not self.db.query(Subcategory).filter(Subcategory.id == subcat_id).first():
+                    new_sub_category = Subcategory()
+                    new_sub_category.id = subcat_id
+                    self.db.add(new_sub_category)
+                category_subcategory = CategorySubcategory()
+                category_subcategory.category_id = req.category
+                category_subcategory.subcategory_id = subcat_id
+                self.db.add(category_subcategory)
+
+            for subcat_id in to_remove:
+                product = self.__check_if_any_product_belongs_to_subcategory(subcat_id)
+                if product is not None:
+                    raise GenericException(reason=f"Cannot remove subcategory with id: {subcat_id} as product id: {product.id} belong to this subcategory")
+                
+                cat_related_to_subcat = self.db.query(CategorySubcategory).filter(
+                    (CategorySubcategory.category_id == req.category) & 
+                    (CategorySubcategory.subcategory_id == subcat_id)
+                ).first()
+                if cat_related_to_subcat:
+                    self.db.delete(cat_related_to_subcat)
+                    if not self.__check_if_subcategory_belongs_to_any_other_category(req.category, subcat_id):
+                        subcat_to_delete = self.db.query(Subcategory).filter(Subcategory.id == subcat_id).first()
+                        if subcat_to_delete:
+                            self.db.delete(subcat_to_delete)
+            
+            self.db.commit()
+            return GenericResponse(
+                status_code=status.HTTP_200_OK,
+                msg=f"Category successfully updated with id: {category.id}"
+            )
+        except GenericException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
+        
+    def delete_category(self, req: DeleteCategoryRequest):
+        try:
+            category = self.db.query(Category).filter(Category.id == req.category).first()
+            if not category:
+                raise GenericException(reason=f"Category not found with id: {req.category}")
+            
+            product = self.__check_if_any_product_belongs_to_category(req.category)
+            if product is not None:
+                raise GenericException(reason=f"Cannot delete category with id: {req.category} as product id: {product.id} belong to this category")
+
+            subcategories = self.db.query(CategorySubcategory).filter(CategorySubcategory.category_id == req.category).all()
+            for subcat in subcategories:
+                product = self.__check_if_any_product_belongs_to_subcategory(subcat.subcategory_id)
+                if product is not None:
+                    raise GenericException(reason=f"Cannot delete category with id: {req.category} and subcategory with id: {subcat.subcategory_id} as product id: {product.id} belong to this subcategory")
+
+                cats_related_to_subcat = self.db.query(CategorySubcategory).filter(CategorySubcategory.category_id == req.category and CategorySubcategory.subcategory_id == subcat.subcategory_id).first()
+                if cats_related_to_subcat:
+                    self.db.delete(cats_related_to_subcat)
+                    self.db.commit()
+                if not self.__check_if_subcategory_belongs_to_any_other_category(req.category, subcat.subcategory_id):
+                    subcat_to_delete = self.db.query(Subcategory).filter(Subcategory.id == subcat.subcategory_id).first()
+                    if subcat_to_delete:
+                        self.db.delete(subcat_to_delete)
+
+            self.db.delete(category)
+            self.db.commit()
+            return GenericResponse(
+                status_code=status.HTTP_200_OK,
+                msg=f"Category successfully deleted with id: {req.category}"
+            )
+        except GenericException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise GenericException(reason=str(e))
+
     def get_all_categories_subcategories(self):
         try:
             categories = self.db.query(Category).all()
