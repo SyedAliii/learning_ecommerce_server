@@ -33,7 +33,7 @@ async def get_single_product(category: str, sub_category: str, title: str, id: s
 async def update_product(product_update_request: ProductUpdateRequest, user_id: int = Depends(get_current_user),
                           db: Session = Depends(get_db)):
     product_service = ProductService(db)
-    return product_service.update(product_update_request, user_id=user_id)
+    return await product_service.update(product_update_request, user_id=user_id)
 
 @router.delete("/delete_product/{product_id}", response_model=GenericResponse)
 async def delete_product(product_id: str, user_id: int = Depends(get_current_user),

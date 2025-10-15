@@ -18,6 +18,9 @@ import os
 import app.utils.str_helper as str_helper
 from app.integrations.cloudinary_service import upload_image
 from app.utils.str_helper import generate_unique_uuid
+import redis.asyncio as redis
+
+redis_client = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
 
 class ProductService:
     def __init__(self, db: Session):
@@ -132,8 +135,23 @@ class ProductService:
             raise
         except Exception as e:
             raise GenericException(reason=f"Error getting product with id {req.id}: {str(e)}")
+        
+    def get_single_with_id(self, product_id: str):
+        try:
+            product = self.db.query(Product).filter(Product.id == product_id).first()
+            if not product:
+                raise GenericException(reason=f"Product not found with id: {product_id}")
 
-    def update(self, product_update_request: ProductUpdateRequest, user_id: int):
+            url_slug = f"{str_helper.slugify(product.category_id)}/{str_helper.slugify(product.subcategory_id)}/{str_helper.slugify(product.title)}/{product.id}"
+            product_images : List[ProductImage] = product.images
+            return SingleProductGetResponse(product=ProductBaseModel(**product.__dict__, url_slug=url_slug,
+                        product_img_urls=[img.url for img in product_images]))
+        except GenericException:
+            raise
+        except Exception as e:
+            raise GenericException(reason=f"Error getting product with id {product_id}: {str(e)}")
+
+    async def update(self, product_update_request: ProductUpdateRequest, user_id: int):
         try:
             if user_id is None:
                 raise GenericException(reason="User not authenticated")
@@ -153,9 +171,18 @@ class ProductService:
             self.db.commit()
             self.db.refresh(product)
 
+            try:
+                prod: SingleProductGetResponse = self.get_single_with_id(product.id)
+                channel = settings.PRODUCT_UPDATE_CHANNEL
+                json = prod.model_dump_json()
+                await redis_client.publish(channel, json)
+                server_push_status = True
+            except Exception as e:
+                server_push_status = False
+        
             return GenericResponse(
                 status_code=status.HTTP_200_OK,
-                msg=f"Product successfully updated"
+                msg=f"Product successfully updated with Server Push Status: {server_push_status}"
             )
         except GenericException:
             raise
@@ -355,6 +382,17 @@ class ProductService:
                 ls = [s.subcategory_id for s in sub]
                 cat_subcat_list[cat.id] = ls
             return GetAllCategoriesSubcategoriesResponse(categories_subcategories=cat_subcat_list)
+        except GenericException:
+            raise
+        except Exception as e:
+            raise GenericException(reason=str(e))
+        
+    def get_product(self, product_id: str):
+        try:
+            product = self.db.query(Product).filter(Product.id == product_id).first()
+            product_data = product.__dict__
+            product_model = ProductUpdatePushResponse(**product_data)
+            return product_model
         except GenericException:
             raise
         except Exception as e:
