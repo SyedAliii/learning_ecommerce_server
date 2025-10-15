@@ -11,17 +11,10 @@ from sqlalchemy.orm import Session
 redis_client = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
 router = APIRouter()
 
-@router.websocket("/ws/products/update/{product_id}")
-async def websocket_product_update(websocket: WebSocket, product_id: str, db: Session = Depends(get_db)):
+@router.websocket("/ws/products/update")
+async def websocket_product_update(websocket: WebSocket, db: Session = Depends(get_db)):
     await websocket.accept()
     try:
-        product_service = ProductService(db)
-        prod: SingleProductGetResponse = product_service.get_single_with_id(product_id)
-        if prod:
-            await websocket.send_json(prod.model_dump())
-        else:
-            await websocket.send_json({"type": "error", "message": "unable to send product update push"})
-
         channel = settings.PRODUCT_UPDATE_CHANNEL
         pubsub = redis_client.pubsub()
         await pubsub.subscribe(channel)
