@@ -11,8 +11,7 @@ from app.core.exceptions.exception_main import GenericException
 from typing import List
 from app.core.config import settings
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from app.tasks.email_tasks import send_email_task
 
 class OrderService:
     def __init__(self, db: Session):
@@ -110,15 +109,8 @@ class OrderService:
             product_ids_in_cart = self.__get_product_ids_in_cart(cart_id)
             products_breakdown = self.__get_products_price_breakdown(product_ids_in_cart)
             
-            sender_email = settings.SENDER_EMAIL
             receiver_email = self.db.query(User).filter(User.id == receipt.user_id).first().email
-            app_password = settings.APP_PASSWORD
-            
-            message = MIMEMultipart()
-            message["From"] = sender_email
-            message["To"] = receiver_email
-            message["Subject"] = f"Receipt for Your Order Id: {receipt.id} - Status: " + self.__get_order_status_string(order_status)
-
+            subject = f"Receipt for Your Order Id: {receipt.id} - Status: " + self.__get_order_status_string(order_status)
             body = "This is an auto generated receipt for your recent order.\n\n"
             for product in products_breakdown:
                 body += f"Product: {product['title']}\n"
@@ -132,16 +124,11 @@ class OrderService:
             body += f"Addressed to: {user.address}\n"
             body += "\nThank you for shopping with us!"
 
-            message.attach(MIMEText(body, "plain"))
-
             try:
-                server = smtplib.SMTP("smtp.gmail.com", 587)
-                server.starttls()
-                server.login(sender_email, app_password)
-                server.sendmail(sender_email, receiver_email, message.as_string())
+                send_email_task.delay(receiver_email, subject, body)
                 return True, None
-            finally:
-                server.quit()
+            except Exception as e:
+                return False, str(e)
         except Exception as e:
             return False, str(e)
 

@@ -14,3 +14,10 @@
 - pip3 install cloudinary
 - pip install celery
 - pip install redis
+- pip install aiosmtplib
+
+2. Running Cmds:
+- redis-server
+- uvicorn app.main:app --reload
+- celery -A app.core.celery_worker.celery worker --pool=solo --loglevel=info
+- pip freeze > requirements.txt

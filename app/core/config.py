@@ -14,8 +14,6 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 180
     DEBUG: bool = True 
-    APP_PASSWORD: str
-    SENDER_EMAIL: str
     PRODUCT_IMAGES_DIR: str = "assets/product_images/"
     ROOT_FOLDER: str = "app/"
     FUZZY_SEARCH_THRESHOLD: int = 60
@@ -27,6 +25,10 @@ class Settings(BaseSettings):
     FRONTEND_SPECIFIC_BROWSER_URL: str
     REDIS_URL: str
     PRODUCT_UPDATE_CHANNEL: str = f"product"
+    SMTP_SERVER: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SENDER_EMAIL: str
+    APP_PASSWORD: str
 
     class Config:
         env_file = env_file
