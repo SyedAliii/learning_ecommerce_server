@@ -149,6 +149,11 @@ class OrderService:
         try:
             user = self.db.query(User).filter(User.id == user_id).first()
             if user.active_cart_id != None:
+                product_ids_in_cart = self.__get_product_ids_in_cart(user.active_cart_id)
+                stock_check_result, product_stock_reason = self.__check_product_stock(product_ids_in_cart)
+                if not stock_check_result:
+                    raise GenericException(reason=product_stock_reason)
+
                 order = Order()
                 order.status = OrderStatus.PENDING
                 order.user_id = user.id
@@ -165,7 +170,7 @@ class OrderService:
                         status_code=status.HTTP_204_NO_CONTENT,
                         msg=f"No Active Cart for this user"
                     )
-        except GenericException:
+        except GenericException as ge:
             self.db.rollback()
             raise
         except Exception as e:
