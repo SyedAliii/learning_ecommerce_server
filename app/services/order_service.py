@@ -125,6 +125,7 @@ class OrderService:
             body += "\nThank you for shopping with us!"
 
             try:
+                # print(f"Email Credentials: {settings.SENDER_EMAIL}, {settings.APP_PASSWORD}")
                 send_email_task.delay(receiver_email, subject, body)
                 return True, None
             except Exception as e:

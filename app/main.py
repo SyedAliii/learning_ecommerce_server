@@ -11,9 +11,9 @@ from app.core.config import settings
 app = FastAPI()
 
 origins = [
-    "http://localhost:5173",  # Vite default port
-    "http://localhost:8080",  # In case your dev server runs on 8080
-    "http://127.0.0.1:5173",  # Some browsers resolve localhost to 127.0.0.1
+    settings.FRONTEND_URL,  # Vite default port
+    settings.FRONTEND_FALLBACK_URL,  # In case your dev server runs on 8080
+    settings.FRONTEND_SPECIFIC_BROWSER_URL,  # Some browsers resolve localhost to 127.0.0.1
 ]
  
 app.add_middleware(

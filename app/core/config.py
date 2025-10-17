@@ -1,4 +1,6 @@
 import os
+from io import StringIO
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
 environment = os.getenv("ENVIRONMENT", "development")
@@ -6,6 +8,12 @@ if environment == "production":
     env_file = ".env.production"
 elif environment == "development":
     env_file = ".env.development"
+else:
+    env_file = ".env"
+
+secret_env = os.getenv("APP_ENV")
+if secret_env and not os.path.exists(env_file):
+    load_dotenv(stream=StringIO(secret_env))
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "E-Commerce Server"

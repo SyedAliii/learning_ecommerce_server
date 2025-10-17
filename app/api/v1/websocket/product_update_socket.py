@@ -1,3 +1,4 @@
+from fastapi.websockets import WebSocketState
 import redis.asyncio as redis
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from app.core.config import settings
@@ -39,6 +40,7 @@ async def websocket_product_update(websocket: WebSocket, db: Session = Depends(g
         for t in pending:
             t.cancel()
     except WebSocketDisconnect:
+        print("Client disconnected")
         pass
     finally:
         try:
@@ -46,4 +48,5 @@ async def websocket_product_update(websocket: WebSocket, db: Session = Depends(g
             await pubsub.close()
         except Exception:
             pass
-        await websocket.close()
+        if websocket.client_state == WebSocketState.CONNECTED:
+            await websocket.close()

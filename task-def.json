@@ -1,0 +1,52 @@
+{
+  "family": "ecommerce-learning-server-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::677547046118:role/ecsTaskExecutionRole-learning-ecom",
+  "taskRoleArn": "arn:aws:iam::677547046118:role/ecsTaskRole-learning-ecom",
+  "containerDefinitions": [
+    {
+      "name": "learning-ecom-container",
+      "image": "677547046118.dkr.ecr.ap-northeast-1.amazonaws.com/ecommerce-server-ecr-repo:v5",
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "command": [
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "environment": [
+        {
+          "name": "ENVIRONMENT",
+          "value": "production"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "APP_ENV",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-1:677547046118:secret:production_level_keys_for_ecommerce_learning_app-xHJ4uu"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/learning-ecom",
+          "awslogs-region": "ap-northeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
